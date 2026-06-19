@@ -34,7 +34,7 @@
 .sidebar__nav {
   display: flex;
   flex-direction: column;
-  padding: 80px 12px 24px;
+  padding: 100px 12px 24px;
   gap: 2px;
 }
 

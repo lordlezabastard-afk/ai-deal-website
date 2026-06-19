@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import slide2Background from "../assets/Fone2.webp";
-import slide3Background from "../assets/Fone3.avif";
 import "./Hero.css";
 
-const CANVAS_COLOR = [167, 139, 250];
+// TODO: когда появятся реальные файлы — заменить на:
+// import fone1 from "../assets/fone1.avif";
+// import fone2 from "../assets/fone2.avif";
+// и передать их в SECTIONS[1].sideImage.image / SECTIONS[2].sideImage.image
+const fone1 = null;
+const fone2 = null;
 
 const SECTIONS = [
   {
@@ -18,9 +21,10 @@ const SECTIONS = [
     subtitle:
       "Платформа для обучения AI-технологиям, автоматизации бизнеса и построения партнёрской сети с пожизненным доходом",
     accent: "#a78bfa",
-    primaryBtn: { label: "Зарегистрироваться", bg: "#7c3aed" },
+    accentRgb: [167, 139, 250],
+    primaryBtn: null,
     secondaryBtn: { label: "Узнать больше" },
-    bgImage: null,
+    sideImage: null,
   },
   {
     id: 1,
@@ -36,9 +40,10 @@ const SECTIONS = [
     subtitle:
       "Мощный набор средств для вашего бизнеса. Поможет внедрить нейросети и облачные сервисы. Автоматизирует задачи, улучшит процессы и увеличит производительность. Всё готово к использованию",
     accent: "#34d399",
+    accentRgb: [52, 211, 153],
     primaryBtn: { label: "Смотреть курсы", bg: "#059669" },
     secondaryBtn: { label: "Как это работает" },
-    bgImage: slide2Background,
+    sideImage: { position: "left", image: fone1, glow: "rgba(52, 211, 153, 0.3)" },
   },
   {
     id: 2,
@@ -51,9 +56,10 @@ const SECTIONS = [
     subtitle:
       "Приглашай партнёров и зарабатывай с трёх уровней структуры. Чем больше команда — тем выше доход.",
     accent: "#fbbf24",
+    accentRgb: [251, 191, 36],
     primaryBtn: { label: "Начать зарабатывать", bg: "#b45309" },
     secondaryBtn: { label: "Условия партнёрки" },
-    bgImage: slide3Background,
+    sideImage: { position: "right", image: fone2, glow: "rgba(251, 191, 36, 0.3)" },
   },
 ];
 
@@ -81,12 +87,26 @@ const ICONS = {
   ),
 };
 
+function lerpColor(a, b, t) {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+
 function Hero() {
   const containerRef = useRef(null);
   const sectionRefs = useRef([]);
   const canvasRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const targetColorRef = useRef(SECTIONS[0].accentRgb);
+  const currentColorRef = useRef([...SECTIONS[0].accentRgb]);
+  const scrollProgressRef = useRef(0);
+
+  useEffect(() => {
+    targetColorRef.current = SECTIONS[activeIndex].accentRgb;
+  }, [activeIndex]);
+
+  // Следим за скроллом внутри scroll-snap контейнера: какая секция активна
+  // и насколько мы продвинулись внутри неё (используется для лёгкого смещения частиц в canvas).
   useEffect(() => {
     const container = containerRef.current;
     let ticking = false;
@@ -94,16 +114,11 @@ function Hero() {
     function update() {
       const vh = container.clientHeight;
       const scrollTop = container.scrollTop;
+      const raw = scrollTop / vh;
+      const idx = Math.min(Math.max(Math.round(raw), 0), SECTIONS.length - 1);
 
-      setActiveIndex(Math.round(scrollTop / vh));
-
-      sectionRefs.current.forEach((sectionEl, i) => {
-        if (!sectionEl) return;
-        const delta = scrollTop - i * vh;
-        const progress = Math.min(Math.abs(delta) / vh, 1);
-        sectionEl.style.setProperty("--py", delta.toFixed(1));
-        sectionEl.style.setProperty("--bg-fade", (1 - progress * 0.4).toFixed(3));
-      });
+      setActiveIndex(idx);
+      scrollProgressRef.current = raw - Math.floor(raw);
 
       ticking = false;
     }
@@ -124,12 +139,15 @@ function Hero() {
     };
   }, []);
 
+  // Единый закреплённый (position: fixed) canvas-фон для всех 3 секций.
+  // Сам canvas не двигается со скроллом — двигаются только частицы/орбы внутри него,
+  // а цвет акцента плавно перетекает между секциями (фиолетовый → зелёный → жёлтый).
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
-    let width = 0;
-    let height = 0;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
     let rafId;
 
     const particles = Array.from({ length: 58 }, () => ({
@@ -146,9 +164,8 @@ function Hero() {
     ];
 
     function resize() {
-      const rect = canvas.parentElement.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
+      width = window.innerWidth;
+      height = window.innerHeight;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       canvas.style.width = `${width}px`;
@@ -160,9 +177,13 @@ function Hero() {
     resize();
     window.addEventListener("resize", resize);
 
-    const [r, g, b] = CANVAS_COLOR;
-
     function draw() {
+      currentColorRef.current = lerpColor(currentColorRef.current, targetColorRef.current, 0.02);
+      const [r, g, b] = currentColorRef.current.map(Math.round);
+
+      // лёгкое смещение по вертикали в зависимости от прогресса скролла внутри текущей секции
+      const offsetY = (scrollProgressRef.current - 0.5) * 40;
+
       ctx.clearRect(0, 0, width, height);
 
       ctx.strokeStyle = "rgba(255,255,255,0.035)";
@@ -184,7 +205,7 @@ function Hero() {
       const now = Date.now();
       orbs.forEach((orb) => {
         const x = (orb.baseX + Math.sin(now * orb.speed + orb.phase) * 0.07) * width;
-        const y = (orb.baseY + Math.cos(now * orb.speed * 0.8 + orb.phase) * 0.06) * height;
+        const y = (orb.baseY + Math.cos(now * orb.speed * 0.8 + orb.phase) * 0.06) * height + offsetY;
         const radius = orb.r * Math.max(width, height);
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
         gradient.addColorStop(0, `rgba(${r},${g},${b},0.28)`);
@@ -200,7 +221,7 @@ function Hero() {
         p.y += p.vy;
         if (p.x < 0 || p.x > 1) p.vx *= -1;
         if (p.y < 0 || p.y > 1) p.vy *= -1;
-        return { x: p.x * width, y: p.y * height };
+        return { x: p.x * width, y: p.y * height + offsetY };
       });
 
       ctx.strokeStyle = `rgba(${r},${g},${b},0.15)`;
@@ -243,74 +264,96 @@ function Hero() {
   }
 
   return (
-    <div className="hero-scroll" ref={containerRef}>
-      {SECTIONS.map((section, i) => (
-        <section
-          key={section.id}
-          ref={(el) => (sectionRefs.current[i] = el)}
-          className="hero-section"
-        >
-          {section.bgImage ? (
-            <div
-              className="hero-section__bg hero-parallax"
-              style={{ backgroundImage: `url(${section.bgImage})` }}
-            >
-              <div className="hero-section__overlay" />
-            </div>
-          ) : (
-            <canvas ref={canvasRef} className="hero__canvas hero-parallax" />
-          )}
+    <>
+      <canvas ref={canvasRef} className="hero-fixed-canvas" />
 
-          <div className="hero__content">
-            <div className="hero__icon" style={{ color: section.accent }}>
-              {ICONS[section.icon]}
+      <div className="hero-scroll" ref={containerRef}>
+        {SECTIONS.map((section, i) => {
+          const content = (
+            <div className={`hero__content ${section.sideImage ? "hero__content--side" : ""}`}>
+              <div className="hero__icon" style={{ color: section.accent }}>
+                {ICONS[section.icon]}
+              </div>
+              <span
+                className="hero__badge"
+                style={{ color: section.accent, borderColor: section.accent }}
+              >
+                {section.badge}
+              </span>
+              <h1 className="hero__title">
+                {section.titleParts.map((part, idx) =>
+                  part.highlight ? (
+                    <span key={idx} style={{ color: section.accent }}>
+                      {part.text}
+                    </span>
+                  ) : (
+                    <span key={idx}>{part.text}</span>
+                  )
+                )}
+              </h1>
+              <p className="hero__subtitle">{section.subtitle}</p>
+              <div className="hero__buttons">
+                {section.primaryBtn && (
+                  <button
+                    className="btn hero__btn-primary"
+                    style={{ background: section.primaryBtn.bg }}
+                  >
+                    {section.primaryBtn.label}
+                  </button>
+                )}
+                <button className="btn btn--ghost">{section.secondaryBtn.label}</button>
+              </div>
+              <div className="hero__cta">
+                <button type="button" className="hero__cta-btn">
+                  РЕГИСТРАЦИЯ
+                </button>
+              </div>
             </div>
-            <span
-              className="hero__badge"
-              style={{ color: section.accent, borderColor: section.accent }}
+          );
+
+          return (
+            <section
+              key={section.id}
+              ref={(el) => (sectionRefs.current[i] = el)}
+              className="hero-section"
             >
-              {section.badge}
-            </span>
-            <h1 className="hero__title">
-              {section.titleParts.map((part, idx) =>
-                part.highlight ? (
-                  <span key={idx} style={{ color: section.accent }}>
-                    {part.text}
-                  </span>
-                ) : (
-                  <span key={idx}>{part.text}</span>
-                )
+              {section.sideImage ? (
+                <div className={`hero__layout hero__layout--${section.sideImage.position}`}>
+                  <div className="hero__side-image">
+                    {section.sideImage.image ? (
+                      <img src={section.sideImage.image} alt="" className="hero__side-image-img" />
+                    ) : (
+                      <div
+                        className="hero__side-image-placeholder"
+                        style={{ background: `linear-gradient(145deg, ${section.sideImage.glow}, rgba(10,10,18,0.85))` }}
+                      >
+                        {ICONS[section.icon]}
+                      </div>
+                    )}
+                  </div>
+                  {content}
+                </div>
+              ) : (
+                content
               )}
-            </h1>
-            <p className="hero__subtitle">{section.subtitle}</p>
-            <div className="hero__buttons">
-              <button className="btn hero__btn-primary" style={{ background: section.primaryBtn.bg }}>
-                {section.primaryBtn.label}
-              </button>
-              <button className="btn btn--ghost">{section.secondaryBtn.label}</button>
-            </div>
-            <div className="hero__cta">
-              <button type="button" className="hero__cta-btn">
-                РЕГИСТРАЦИЯ
-              </button>
-            </div>
-          </div>
-        </section>
-      ))}
+            </section>
+          );
+        })}
 
-      <div className="hero__dots">
-        {SECTIONS.map((section, i) => (
-          <button
-            key={section.id}
-            type="button"
-            className={`hero__dot ${i === activeIndex ? "hero__dot--active" : ""}`}
-            style={i === activeIndex ? { background: section.accent } : undefined}
-            onClick={() => goToSection(i)}
-            aria-label={`Секция ${i + 1}`}
-          />
-        ))}
+        <div className="hero__dots">
+          {SECTIONS.map((section, i) => (
+            <button
+              key={section.id}
+              type="button"
+              className={`hero__dot ${i === activeIndex ? "hero__dot--active" : ""}`}
+              style={i === activeIndex ? { background: section.accent } : undefined}
+              onClick={() => goToSection(i)}
+              aria-label={`Секция ${i + 1}`}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
