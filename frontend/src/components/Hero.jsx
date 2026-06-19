@@ -89,14 +89,39 @@ function Hero() {
 
   useEffect(() => {
     const container = containerRef.current;
+    let ticking = false;
 
-    function handleScroll() {
-      const index = Math.round(container.scrollTop / container.clientHeight);
-      setActiveIndex(index);
+    function update() {
+      const vh = container.clientHeight;
+      const scrollTop = container.scrollTop;
+
+      setActiveIndex(Math.round(scrollTop / vh));
+
+      sectionRefs.current.forEach((sectionEl, i) => {
+        if (!sectionEl) return;
+        const delta = scrollTop - i * vh;
+        const progress = Math.min(Math.abs(delta) / vh, 1);
+        sectionEl.style.setProperty("--py", delta.toFixed(1));
+        sectionEl.style.setProperty("--bg-fade", (1 - progress * 0.4).toFixed(3));
+      });
+
+      ticking = false;
     }
 
+    function handleScroll() {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }
+
+    update();
     container.addEventListener("scroll", handleScroll, { passive: true });
-    return () => container.removeEventListener("scroll", handleScroll);
+    window.addEventListener("resize", update);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", update);
+    };
   }, []);
 
   useEffect(() => {
@@ -227,13 +252,13 @@ function Hero() {
         >
           {section.bgImage ? (
             <div
-              className="hero-section__bg"
+              className="hero-section__bg hero-parallax"
               style={{ backgroundImage: `url(${section.bgImage})` }}
             >
               <div className="hero-section__overlay" />
             </div>
           ) : (
-            <canvas ref={canvasRef} className="hero__canvas" />
+            <canvas ref={canvasRef} className="hero__canvas hero-parallax" />
           )}
 
           <div className="hero__content">

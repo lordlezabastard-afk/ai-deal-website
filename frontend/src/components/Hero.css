@@ -34,6 +34,31 @@
   background-position: center;
 }
 
+/* Параллакс: дальний слой (фон) двигается медленнее обычной скорости скролла.
+   --py — смещение скролла внутри секции (px), задаётся в JS; net скорость слоя ≈ 0.35 от обычной. */
+.hero-parallax {
+  will-change: transform;
+  opacity: var(--bg-fade, 1);
+}
+
+.hero__canvas.hero-parallax {
+  transform: translateY(calc(var(--py, 0) * 1px * 0.65));
+}
+
+.hero-section__bg.hero-parallax {
+  transform: translateY(calc(var(--py, 0) * 1px * 0.65)) scale(1.15);
+}
+
+@media (max-width: 768px) {
+  .hero__canvas.hero-parallax {
+    transform: translateY(calc(var(--py, 0) * 1px * 0.12));
+  }
+
+  .hero-section__bg.hero-parallax {
+    transform: translateY(calc(var(--py, 0) * 1px * 0.12)) scale(1.15);
+  }
+}
+
 .hero-section__overlay {
   position: absolute;
   inset: 0;
