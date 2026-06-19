@@ -3,10 +3,9 @@ import slide2Background from "../assets/Fone2.webp";
 import slide3Background from "../assets/Fone3.avif";
 import "./Hero.css";
 
-const SLIDE_DURATION = 4500;
-const WHEEL_LOCK_MS = 700;
+const CANVAS_COLOR = [167, 139, 250];
 
-const SLIDES = [
+const SECTIONS = [
   {
     id: 0,
     icon: "rocket",
@@ -19,10 +18,9 @@ const SLIDES = [
     subtitle:
       "Платформа для обучения AI-технологиям, автоматизации бизнеса и построения партнёрской сети с пожизненным доходом",
     accent: "#a78bfa",
-    accentRgb: [167, 139, 250],
     primaryBtn: { label: "Зарегистрироваться", bg: "#7c3aed" },
     secondaryBtn: { label: "Узнать больше" },
-    background: null,
+    bgImage: null,
   },
   {
     id: 1,
@@ -33,15 +31,14 @@ const SLIDES = [
       { text: "нейросетями", highlight: true },
       { text: " и современным " },
       { text: "технологиям", highlight: true },
-      { text: ", осваивая навыки для роста вашего бизнеса!" },
+      { text: "!" },
     ],
     subtitle:
       "Мощный набор средств для вашего бизнеса. Поможет внедрить нейросети и облачные сервисы. Автоматизирует задачи, улучшит процессы и увеличит производительность. Всё готово к использованию",
     accent: "#34d399",
-    accentRgb: [52, 211, 153],
     primaryBtn: { label: "Смотреть курсы", bg: "#059669" },
     secondaryBtn: { label: "Как это работает" },
-    background: slide2Background,
+    bgImage: slide2Background,
   },
   {
     id: 2,
@@ -54,10 +51,9 @@ const SLIDES = [
     subtitle:
       "Приглашай партнёров и зарабатывай с трёх уровней структуры. Чем больше команда — тем выше доход.",
     accent: "#fbbf24",
-    accentRgb: [251, 191, 36],
     primaryBtn: { label: "Начать зарабатывать", bg: "#b45309" },
     secondaryBtn: { label: "Условия партнёрки" },
-    background: slide3Background,
+    bgImage: slide3Background,
   },
 ];
 
@@ -85,70 +81,22 @@ const ICONS = {
   ),
 };
 
-function lerpColor(a, b, t) {
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-}
-
 function Hero() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const heroRef = useRef(null);
+  const containerRef = useRef(null);
+  const sectionRefs = useRef([]);
   const canvasRef = useRef(null);
-  const timerRef = useRef(null);
-  const targetColorRef = useRef(SLIDES[0].accentRgb);
-  const currentColorRef = useRef([...SLIDES[0].accentRgb]);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    targetColorRef.current = SLIDES[currentSlide].accentRgb;
-  }, [currentSlide]);
+    const container = containerRef.current;
 
-  const restartTimer = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
-    }, SLIDE_DURATION);
-  };
-
-  const goToSlide = (index) => {
-    setCurrentSlide(index);
-    restartTimer();
-  };
-
-  useEffect(() => {
-    restartTimer();
-    return () => clearInterval(timerRef.current);
-  }, []);
-
-  // Дополнительная навигация колесом мыши — только когда секция в зоне видимости и не на мобильных
-  useEffect(() => {
-    let locked = false;
-
-    function handleWheel(e) {
-      if (window.innerWidth <= 768) return;
-      const el = heroRef.current;
-      if (!el || locked) return;
-
-      const rect = el.getBoundingClientRect();
-      const viewportMid = window.innerHeight / 2;
-      const inView = rect.top <= viewportMid && rect.bottom >= viewportMid;
-      if (!inView) return;
-
-      if (e.deltaY > 0) {
-        setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
-      } else if (e.deltaY < 0) {
-        setCurrentSlide((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
-      } else {
-        return;
-      }
-
-      restartTimer();
-      locked = true;
-      setTimeout(() => {
-        locked = false;
-      }, WHEEL_LOCK_MS);
+    function handleScroll() {
+      const index = Math.round(container.scrollTop / container.clientHeight);
+      setActiveIndex(index);
     }
 
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    return () => window.removeEventListener("wheel", handleWheel);
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -187,10 +135,9 @@ function Hero() {
     resize();
     window.addEventListener("resize", resize);
 
-    function draw() {
-      currentColorRef.current = lerpColor(currentColorRef.current, targetColorRef.current, 0.02);
-      const [r, g, b] = currentColorRef.current.map(Math.round);
+    const [r, g, b] = CANVAS_COLOR;
 
+    function draw() {
       ctx.clearRect(0, 0, width, height);
 
       ctx.strokeStyle = "rgba(255,255,255,0.035)";
@@ -266,84 +213,79 @@ function Hero() {
     };
   }, []);
 
-  const slide = SLIDES[currentSlide];
+  function goToSection(index) {
+    sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
-    <section className="hero" ref={heroRef}>
-      <div className="hero__bg" style={{ opacity: currentSlide === 0 ? 1 : 0 }}>
-        <canvas ref={canvasRef} className="hero__canvas" />
-      </div>
-      {SLIDES.map(
-        (s, i) =>
-          s.background && (
+    <div className="hero-scroll" ref={containerRef}>
+      {SECTIONS.map((section, i) => (
+        <section
+          key={section.id}
+          ref={(el) => (sectionRefs.current[i] = el)}
+          className="hero-section"
+        >
+          {section.bgImage ? (
             <div
-              key={s.id}
-              className="hero__bg hero__bg--image"
-              style={{
-                backgroundImage: `url(${s.background})`,
-                opacity: currentSlide === i ? 1 : 0,
-              }}
+              className="hero-section__bg"
+              style={{ backgroundImage: `url(${section.bgImage})` }}
             >
-              <div className="hero__bg-overlay" />
+              <div className="hero-section__overlay" />
             </div>
-          )
-      )}
+          ) : (
+            <canvas ref={canvasRef} className="hero__canvas" />
+          )}
 
-      <div className="hero__progress">
-        <div
-          key={currentSlide}
-          className="hero__progress-fill"
-          style={{ background: slide.accent, animationDuration: `${SLIDE_DURATION}ms` }}
-        />
-      </div>
-
-      <div className="hero__content">
-        <div key={currentSlide} className="hero__slide">
-          <div className="hero__icon" style={{ color: slide.accent }}>
-            {ICONS[slide.icon]}
+          <div className="hero__content">
+            <div className="hero__icon" style={{ color: section.accent }}>
+              {ICONS[section.icon]}
+            </div>
+            <span
+              className="hero__badge"
+              style={{ color: section.accent, borderColor: section.accent }}
+            >
+              {section.badge}
+            </span>
+            <h1 className="hero__title">
+              {section.titleParts.map((part, idx) =>
+                part.highlight ? (
+                  <span key={idx} style={{ color: section.accent }}>
+                    {part.text}
+                  </span>
+                ) : (
+                  <span key={idx}>{part.text}</span>
+                )
+              )}
+            </h1>
+            <p className="hero__subtitle">{section.subtitle}</p>
+            <div className="hero__buttons">
+              <button className="btn hero__btn-primary" style={{ background: section.primaryBtn.bg }}>
+                {section.primaryBtn.label}
+              </button>
+              <button className="btn btn--ghost">{section.secondaryBtn.label}</button>
+            </div>
+            <div className="hero__cta">
+              <button type="button" className="hero__cta-btn">
+                РЕГИСТРАЦИЯ
+              </button>
+            </div>
           </div>
-          <span className="hero__badge" style={{ color: slide.accent, borderColor: slide.accent }}>
-            {slide.badge}
-          </span>
-          <h1 className="hero__title">
-            {slide.titleParts.map((part, i) =>
-              part.highlight ? (
-                <span key={i} style={{ color: slide.accent }}>
-                  {part.text}
-                </span>
-              ) : (
-                <span key={i}>{part.text}</span>
-              )
-            )}
-          </h1>
-          <p className="hero__subtitle">{slide.subtitle}</p>
-          <div className="hero__buttons">
-            <button className="btn hero__btn-primary" style={{ background: slide.primaryBtn.bg }}>
-              {slide.primaryBtn.label}
-            </button>
-            <button className="btn btn--ghost">{slide.secondaryBtn.label}</button>
-          </div>
-          <div className="hero__cta">
-            <button type="button" className="hero__cta-btn">
-              РЕГИСТРАЦИЯ
-            </button>
-          </div>
-        </div>
-      </div>
+        </section>
+      ))}
 
       <div className="hero__dots">
-        {SLIDES.map((s, i) => (
+        {SECTIONS.map((section, i) => (
           <button
-            key={s.id}
+            key={section.id}
             type="button"
-            className={`hero__dot ${i === currentSlide ? "hero__dot--active" : ""}`}
-            style={i === currentSlide ? { background: s.accent } : undefined}
-            onClick={() => goToSlide(i)}
-            aria-label={`Слайд ${i + 1}`}
+            className={`hero__dot ${i === activeIndex ? "hero__dot--active" : ""}`}
+            style={i === activeIndex ? { background: section.accent } : undefined}
+            onClick={() => goToSection(i)}
+            aria-label={`Секция ${i + 1}`}
           />
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
