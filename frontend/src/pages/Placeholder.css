@@ -1,14 +1,16 @@
 .placeholder {
+  position: relative;
   min-height: calc(100vh - 84px);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0a0a12;
   padding: 40px 24px;
   text-align: center;
 }
 
 .placeholder__title {
+  position: relative;
+  z-index: 1;
   font-size: 22px;
   font-weight: 500;
   color: var(--color-text-muted);

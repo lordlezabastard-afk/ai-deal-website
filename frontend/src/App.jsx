@@ -19,12 +19,15 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/school" element={<Placeholder title="AI School" />} />
-            <Route path="/partners" element={<Placeholder title="Партнёрская программа" />} />
-            <Route path="/finance" element={<Placeholder title="Финансы" />} />
-            <Route path="/profile" element={<Placeholder title="Профиль" />} />
-            <Route path="/security" element={<Placeholder title="Безопасность" />} />
-            <Route path="/roadmap" element={<Placeholder title="Дорожная карта" />} />
+            <Route path="/school" element={<Placeholder title="AI School" accent="green" />} />
+            <Route
+              path="/partners"
+              element={<Placeholder title="Партнёрская программа" accent="orange" />}
+            />
+            <Route path="/finance" element={<Placeholder title="Финансы" accent="purple" />} />
+            <Route path="/profile" element={<Placeholder title="Профиль" accent="purple" />} />
+            <Route path="/security" element={<Placeholder title="Безопасность" accent="purple" />} />
+            <Route path="/roadmap" element={<Placeholder title="Дорожная карта" accent="purple" />} />
           </Routes>
         </main>
         <Footer />

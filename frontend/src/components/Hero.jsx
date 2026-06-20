@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuthModal } from "../context/AuthModalContext";
 import { useAuth } from "../context/AuthContext";
+import foneStars from "../assets/fone-stars.avif";
+import foneMountain from "../assets/fone-mountain.avif";
+import foneParticles from "../assets/fone-particles.avif";
 import "./Hero.css";
-
-// TODO: когда появятся реальные файлы — заменить на:
-// import fone1 from "../assets/fone1.avif";
-// import fone2 from "../assets/fone2.avif";
-// и передать их в SECTIONS[1].sideImage.image / SECTIONS[2].sideImage.image
-const fone1 = null;
-const fone2 = null;
 
 const SECTIONS = [
   {
@@ -23,10 +19,8 @@ const SECTIONS = [
     subtitle:
       "Платформа для обучения AI-технологиям, автоматизации бизнеса и построения партнёрской сети с пожизненным доходом",
     accent: "#a78bfa",
-    accentRgb: [167, 139, 250],
     primaryBtn: null,
     secondaryBtn: { label: "Узнать больше" },
-    sideImage: null,
   },
   {
     id: 1,
@@ -42,10 +36,8 @@ const SECTIONS = [
     subtitle:
       "Мощный набор средств для вашего бизнеса. Поможет внедрить нейросети и облачные сервисы. Автоматизирует задачи, улучшит процессы и увеличит производительность. Всё готово к использованию",
     accent: "#34d399",
-    accentRgb: [52, 211, 153],
     primaryBtn: { label: "Смотреть курсы", bg: "#059669" },
     secondaryBtn: { label: "Как это работает" },
-    sideImage: { position: "left", image: fone1, glow: "rgba(52, 211, 153, 0.3)" },
   },
   {
     id: 2,
@@ -58,10 +50,8 @@ const SECTIONS = [
     subtitle:
       "Приглашай партнёров и зарабатывай с трёх уровней структуры. Чем больше команда — тем выше доход.",
     accent: "#fbbf24",
-    accentRgb: [251, 191, 36],
     primaryBtn: { label: "Начать зарабатывать", bg: "#b45309" },
     secondaryBtn: { label: "Условия партнёрки" },
-    sideImage: { position: "right", image: fone2, glow: "rgba(251, 191, 36, 0.3)" },
   },
 ];
 
@@ -89,28 +79,28 @@ const ICONS = {
   ),
 };
 
-function lerpColor(a, b, t) {
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+function clamp01(x) {
+  return Math.min(1, Math.max(0, x));
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 function Hero() {
   const sectionRefs = useRef([]);
-  const canvasRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isInHero, setIsInHero] = useState(true);
 
-  const targetColorRef = useRef(SECTIONS[0].accentRgb);
-  const currentColorRef = useRef([...SECTIONS[0].accentRgb]);
-  const scrollProgressRef = useRef(0);
-
-  useEffect(() => {
-    targetColorRef.current = SECTIONS[activeIndex].accentRgb;
-  }, [activeIndex]);
+  const starsLayerRef = useRef(null);
+  const mountainLayerRef = useRef(null);
+  const overlayRef = useRef(null);
+  const particlesLayerRef = useRef(null);
 
   // Следим за скроллом страницы (единый document-скролл, без вложенного scroll-контейнера):
-  // какая Hero-секция активна и насколько мы продвинулись внутри неё (используется для
-  // лёгкого смещения частиц в canvas). Индекс остаётся на последней секции после того,
-  // как пользователь проскроллил Hero и перешёл к Stats/Features ниже.
+  // какая Hero-секция активна (для индикатора-точек), и считаем прогресс перехода между
+  // фоновыми картинками 3 секций — звёзды → горы (обычный fade) и горы → частицы
+  // (кинематографичное "погружение": zoom-in + затемнение + блюр + cross-fade).
   useEffect(() => {
     let ticking = false;
 
@@ -122,13 +112,42 @@ function Hero() {
 
       setActiveIndex(idx);
       setIsInHero(scrollTop < SECTIONS.length * vh);
-      scrollProgressRef.current = raw - Math.floor(raw);
 
-      // scroll-snap-type включаем только до тех пор, пока пользователь не доехал
-      // до последней Hero-секции — иначе mandatory-снэп навсегда "запирает" скролл
-      // на ней, потому что у Stats/Features/Footer снэп-точек нет.
       const lastSectionTop = sectionRefs.current[SECTIONS.length - 1]?.offsetTop ?? Infinity;
       document.documentElement.classList.toggle("hero-snap-active", scrollTop < lastSectionTop - 2);
+
+      // rawProgress: 0 = верх секции 1 (звёзды), 1 = верх секции 2 (горы), 2 = верх секции 3 (частицы)
+      const rawProgress = Math.min(Math.max(raw, 0), SECTIONS.length - 1);
+      const e0 = easeInOutCubic(clamp01(rawProgress)); // переход 1→2: звёзды → горы
+      const e1 = easeInOutCubic(clamp01(rawProgress - 1)); // переход 2→3: погружение в горы → частицы
+
+      const starsOpacity = 1 - e0;
+      const mountainFadeIn = e0;
+      const mountainScale = 1 + 0.45 * e1;
+      const mountainDarken = 0.3 + 0.55 * e1;
+      const mountainBlur = clamp01((e1 - 0.5) * 2) * 4;
+      const mountainFadeOut = 1 - clamp01((e1 - 0.7) / 0.3);
+      const mountainOpacity = mountainFadeIn * mountainFadeOut;
+      const particlesOpacity = clamp01((e1 - 0.55) / 0.45);
+      const particlesScale = 1.08 - 0.08 * particlesOpacity;
+      const particlesBrightness = 0.7 + 0.3 * particlesOpacity;
+
+      if (starsLayerRef.current) {
+        starsLayerRef.current.style.opacity = String(starsOpacity);
+      }
+      if (mountainLayerRef.current) {
+        mountainLayerRef.current.style.opacity = String(mountainOpacity);
+        mountainLayerRef.current.style.transform = `scale(${mountainScale})`;
+        mountainLayerRef.current.style.filter = `blur(${mountainBlur}px)`;
+      }
+      if (overlayRef.current) {
+        overlayRef.current.style.opacity = String(mountainDarken * mountainOpacity);
+      }
+      if (particlesLayerRef.current) {
+        particlesLayerRef.current.style.opacity = String(particlesOpacity);
+        particlesLayerRef.current.style.transform = `scale(${particlesScale})`;
+        particlesLayerRef.current.style.filter = `brightness(${particlesBrightness})`;
+      }
 
       ticking = false;
     }
@@ -150,126 +169,6 @@ function Hero() {
     };
   }, []);
 
-  // Единый закреплённый (position: fixed) canvas-фон для всех 3 секций.
-  // Сам canvas не двигается со скроллом — двигаются только частицы/орбы внутри него,
-  // а цвет акцента плавно перетекает между секциями (фиолетовый → зелёный → жёлтый).
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    let rafId;
-
-    const particles = Array.from({ length: 58 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      vx: (Math.random() - 0.5) * 0.00055,
-      vy: (Math.random() - 0.5) * 0.00055,
-    }));
-
-    const orbs = [
-      { baseX: 0.2, baseY: 0.32, r: 0.28, phase: 0, speed: 0.00022 },
-      { baseX: 0.78, baseY: 0.26, r: 0.22, phase: 2.1, speed: 0.00028 },
-      { baseX: 0.5, baseY: 0.78, r: 0.3, phase: 4.2, speed: 0.0002 },
-    ];
-
-    function resize() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpr, dpr);
-    }
-
-    resize();
-    window.addEventListener("resize", resize);
-
-    function draw() {
-      currentColorRef.current = lerpColor(currentColorRef.current, targetColorRef.current, 0.02);
-      const [r, g, b] = currentColorRef.current.map(Math.round);
-
-      // лёгкое смещение по вертикали в зависимости от прогресса скролла внутри текущей секции
-      const offsetY = (scrollProgressRef.current - 0.5) * 40;
-
-      ctx.clearRect(0, 0, width, height);
-
-      ctx.strokeStyle = "rgba(255,255,255,0.035)";
-      ctx.lineWidth = 1;
-      const gridSize = 42;
-      for (let x = 0; x < width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
-
-      const now = Date.now();
-      orbs.forEach((orb) => {
-        const x = (orb.baseX + Math.sin(now * orb.speed + orb.phase) * 0.07) * width;
-        const y = (orb.baseY + Math.cos(now * orb.speed * 0.8 + orb.phase) * 0.06) * height + offsetY;
-        const radius = orb.r * Math.max(width, height);
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, `rgba(${r},${g},${b},0.28)`);
-        gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      const pts = particles.map((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > 1) p.vx *= -1;
-        if (p.y < 0 || p.y > 1) p.vy *= -1;
-        return { x: p.x * width, y: p.y * height + offsetY };
-      });
-
-      ctx.strokeStyle = `rgba(${r},${g},${b},0.15)`;
-      ctx.lineWidth = 1;
-      const maxDist = 110;
-      for (let i = 0; i < pts.length; i++) {
-        for (let j = i + 1; j < pts.length; j++) {
-          const dx = pts[i].x - pts[j].x;
-          const dy = pts[i].y - pts[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < maxDist) {
-            ctx.beginPath();
-            ctx.moveTo(pts[i].x, pts[i].y);
-            ctx.lineTo(pts[j].x, pts[j].y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      ctx.fillStyle = `rgba(${r},${g},${b},0.75)`;
-      pts.forEach((pt) => {
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      rafId = requestAnimationFrame(draw);
-    }
-
-    draw();
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-
   function goToSection(index) {
     sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -279,12 +178,34 @@ function Hero() {
 
   return (
     <>
-      <canvas ref={canvasRef} className="hero-fixed-canvas" />
+      <div className="hero-bg">
+        <div
+          ref={starsLayerRef}
+          className="hero-bg__layer"
+          style={{ backgroundImage: `url(${foneStars})`, opacity: 1 }}
+        />
+        <div
+          ref={mountainLayerRef}
+          className="hero-bg__layer"
+          style={{ backgroundImage: `url(${foneMountain})` }}
+        />
+        <div ref={overlayRef} className="hero-bg__overlay" />
+        <div
+          ref={particlesLayerRef}
+          className="hero-bg__layer"
+          style={{ backgroundImage: `url(${foneParticles})` }}
+        />
+        <div className="hero-bg__vignette" />
+      </div>
 
       <div className="hero-scroll">
-        {SECTIONS.map((section, i) => {
-          const content = (
-            <div className={`hero__content ${section.sideImage ? "hero__content--side" : ""}`}>
+        {SECTIONS.map((section, i) => (
+          <section
+            key={section.id}
+            ref={(el) => (sectionRefs.current[i] = el)}
+            className="hero-section"
+          >
+            <div className="hero__content">
               <div className="hero__icon" style={{ color: section.accent }}>
                 {ICONS[section.icon]}
               </div>
@@ -329,36 +250,8 @@ function Hero() {
                 </div>
               )}
             </div>
-          );
-
-          return (
-            <section
-              key={section.id}
-              ref={(el) => (sectionRefs.current[i] = el)}
-              className="hero-section"
-            >
-              {section.sideImage ? (
-                <div className={`hero__layout hero__layout--${section.sideImage.position}`}>
-                  <div className="hero__side-image">
-                    {section.sideImage.image ? (
-                      <img src={section.sideImage.image} alt="" className="hero__side-image-img" />
-                    ) : (
-                      <div
-                        className="hero__side-image-placeholder"
-                        style={{ background: `linear-gradient(145deg, ${section.sideImage.glow}, rgba(10,10,18,0.85))` }}
-                      >
-                        {ICONS[section.icon]}
-                      </div>
-                    )}
-                  </div>
-                  {content}
-                </div>
-              ) : (
-                content
-              )}
-            </section>
-          );
-        })}
+          </section>
+        ))}
 
         <div className={`hero__dots ${isInHero ? "" : "hero__dots--hidden"}`}>
           {SECTIONS.map((section, i) => (
