@@ -6,7 +6,10 @@
      но под Stats/Features/Footer ниже по странице (см. их z-index:1 + порядок в DOM). */
   z-index: 1;
   overflow: hidden;
-  background: #05050a;
+  /* НЕ ставить тут непрозрачный background: z-index:1 создаёт собственный stacking
+     context, и его фон рисовался бы НАД фоном hero-section везде, где дочерние слои
+     (mountain/particles) прозрачны — то есть полностью перекрывал бы секцию 1 (звёзды). */
+  background: transparent;
 }
 
 .hero-bg__layer {
