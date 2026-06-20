@@ -164,6 +164,10 @@ function Hero() {
   useEffect(() => {
     let ticking = false;
 
+    function getDocTop(el) {
+      return el ? el.getBoundingClientRect().top + window.scrollY : 0;
+    }
+
     function update() {
       const vh = window.innerHeight;
       const scrollTop = window.scrollY;
@@ -173,17 +177,21 @@ function Hero() {
       setActiveIndex(idx);
       setIsInHero(scrollTop < SECTIONS.length * vh);
 
-      const lastSectionTop = sectionRefs.current[SECTIONS.length - 1]?.offsetTop ?? Infinity;
+      const lastSectionTop = getDocTop(sectionRefs.current[SECTIONS.length - 1]) || Infinity;
       document.documentElement.classList.toggle("hero-snap-active", scrollTop < lastSectionTop - 2);
 
-      // rawProgress: 0 = верх секции 1 (звёзды), 1 = верх секции 2 (горы), 2 = верх секции 3 (частицы)
-      const rawProgress = Math.min(Math.max(raw, 0), SECTIONS.length - 1);
-      const t1 = clamp01(rawProgress - 1); // прогресс погружения горы → частицы
+      // Прогресс погружения считаем от ТОЧНЫХ границ секции 2 и секции 3 (через
+      // getBoundingClientRect), а не от scrollY/vh — иначе из-за высоты navbar (84px)
+      // эффект (затемнение/zoom) активировался на ~84px раньше реальной границы секций
+      // и "подсвечивал" затемнением хвост секции 1, создавая видимость анимации на стыке 1→2.
+      const section1Top = getDocTop(sectionRefs.current[1]);
+      const section2Top = getDocTop(sectionRefs.current[2]);
+      const t1 = clamp01((scrollTop - section1Top) / (section2Top - section1Top || 1));
 
       // Слои погружения (mountain/overlay/particles) — это фиксированный поверх-документа
       // оверлей, который имеет смысл ТОЛЬКО начиная с секции 2 (горы). Пока пользователь
       // находится в секции 1 (звёзды), он полностью невидим — у секции 1 свой обычный фон.
-      const isPastSection1 = rawProgress >= 1;
+      const isPastSection1 = scrollTop >= section1Top;
       const dive = computeDiveEffect(t1);
 
       const mountainOpacity = isPastSection1 ? dive.mountainOpacity : 0;
@@ -256,8 +264,13 @@ function Hero() {
             key={section.id}
             ref={(el) => (sectionRefs.current[i] = el)}
             className="hero-section"
-            style={{ backgroundImage: `url(${section.bg})` }}
           >
+            <div
+              className={`hero-section__bg ${i === 0 ? "hero-section__bg--fade-bottom" : ""} ${
+                i === 1 ? "hero-section__bg--fade-top" : ""
+              }`}
+              style={{ backgroundImage: `url(${section.bg})` }}
+            />
             <div className="hero__content">
               <div className="hero__icon" style={{ color: section.accent }}>
                 {ICONS[section.icon]}
