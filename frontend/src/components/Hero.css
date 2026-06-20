@@ -8,17 +8,12 @@
 
 .hero-scroll {
   position: relative;
-  height: 100vh;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
 }
 
 .hero-section {
   position: relative;
   height: 100vh;
   scroll-snap-align: start;
-  scroll-snap-stop: always;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -165,13 +160,20 @@
 }
 
 .hero__dots {
-  position: absolute;
+  position: fixed;
   left: 50%;
   bottom: 28px;
   transform: translateX(-50%);
   z-index: 2;
   display: flex;
   gap: 10px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.hero__dots--hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .hero__dot {

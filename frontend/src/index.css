@@ -29,6 +29,19 @@ body {
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+/* scroll-snap-type включается JS-классом только пока пользователь не доскроллил
+   до последней Hero-секции. Включать его статически на html нельзя: mandatory
+   навсегда "запирает" скролл на последней снэп-точке (дальше неё нет точек —
+   Stats/Features/Footer не снэпятся), а proximity на полную высоту документа
+   дёргает страницу обратно к началу при обычном скролле колесом маленькими шагами. */
+html.hero-snap-active {
+  scroll-snap-type: y mandatory;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text);

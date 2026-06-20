@@ -94,10 +94,10 @@ function lerpColor(a, b, t) {
 }
 
 function Hero() {
-  const containerRef = useRef(null);
   const sectionRefs = useRef([]);
   const canvasRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isInHero, setIsInHero] = useState(true);
 
   const targetColorRef = useRef(SECTIONS[0].accentRgb);
   const currentColorRef = useRef([...SECTIONS[0].accentRgb]);
@@ -107,20 +107,28 @@ function Hero() {
     targetColorRef.current = SECTIONS[activeIndex].accentRgb;
   }, [activeIndex]);
 
-  // Следим за скроллом внутри scroll-snap контейнера: какая секция активна
-  // и насколько мы продвинулись внутри неё (используется для лёгкого смещения частиц в canvas).
+  // Следим за скроллом страницы (единый document-скролл, без вложенного scroll-контейнера):
+  // какая Hero-секция активна и насколько мы продвинулись внутри неё (используется для
+  // лёгкого смещения частиц в canvas). Индекс остаётся на последней секции после того,
+  // как пользователь проскроллил Hero и перешёл к Stats/Features ниже.
   useEffect(() => {
-    const container = containerRef.current;
     let ticking = false;
 
     function update() {
-      const vh = container.clientHeight;
-      const scrollTop = container.scrollTop;
+      const vh = window.innerHeight;
+      const scrollTop = window.scrollY;
       const raw = scrollTop / vh;
       const idx = Math.min(Math.max(Math.round(raw), 0), SECTIONS.length - 1);
 
       setActiveIndex(idx);
+      setIsInHero(scrollTop < SECTIONS.length * vh);
       scrollProgressRef.current = raw - Math.floor(raw);
+
+      // scroll-snap-type включаем только до тех пор, пока пользователь не доехал
+      // до последней Hero-секции — иначе mandatory-снэп навсегда "запирает" скролл
+      // на ней, потому что у Stats/Features/Footer снэп-точек нет.
+      const lastSectionTop = sectionRefs.current[SECTIONS.length - 1]?.offsetTop ?? Infinity;
+      document.documentElement.classList.toggle("hero-snap-active", scrollTop < lastSectionTop - 2);
 
       ticking = false;
     }
@@ -133,11 +141,12 @@ function Hero() {
     }
 
     update();
-    container.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", update);
     return () => {
-      container.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", update);
+      document.documentElement.classList.remove("hero-snap-active");
     };
   }, []);
 
@@ -272,7 +281,7 @@ function Hero() {
     <>
       <canvas ref={canvasRef} className="hero-fixed-canvas" />
 
-      <div className="hero-scroll" ref={containerRef}>
+      <div className="hero-scroll">
         {SECTIONS.map((section, i) => {
           const content = (
             <div className={`hero__content ${section.sideImage ? "hero__content--side" : ""}`}>
@@ -351,7 +360,7 @@ function Hero() {
           );
         })}
 
-        <div className="hero__dots">
+        <div className={`hero__dots ${isInHero ? "" : "hero__dots--hidden"}`}>
           {SECTIONS.map((section, i) => (
             <button
               key={section.id}
