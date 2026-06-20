@@ -87,6 +87,74 @@ function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
+function easeInCubic(t) {
+  return t * t * t;
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+// Cross-fade звёзды → горы растянут на 80% диапазона скролла между секциями
+// (вместо мгновенного fade на первых 20-30%): по 10% в начале и конце прогресса
+// фон остаётся "спокойным", а основная часть перехода — плавный eased crossfade.
+const FADE_WINDOW_START = 0.1;
+const FADE_WINDOW_END = 0.9;
+
+function starsToMountainProgress(t0) {
+  const windowed = clamp01((t0 - FADE_WINDOW_START) / (FADE_WINDOW_END - FADE_WINDOW_START));
+  return easeInOutCubic(windowed);
+}
+
+// Фазовый эффект "погружения" горы → частицы:
+// фаза 1 (0–60% t1) — быстрое заметное приближение (zoom-in) с лёгким нарастанием затемнения;
+// фаза 2 (60–75% t1) — резкий пик затемнения/блюра, момент "ныряния" (крутой ease-in);
+// фаза 3 (75–100% t1) — плавный cross-fade к частицам, затемнение и блюр спадают к 0.
+const DIVE_PHASE1_END = 0.6;
+const DIVE_PHASE2_END = 0.75;
+const SCALE_BASE = 1;
+const SCALE_AFTER_PHASE1 = 1.8;
+const SCALE_AFTER_PHASE2 = 2.0;
+const DARKEN_BASE = 0.3;
+const DARKEN_AFTER_PHASE1 = 0.5;
+const DARKEN_PEAK = 0.85;
+const BLUR_PEAK = 4;
+
+function computeDiveEffect(t1) {
+  if (t1 <= DIVE_PHASE1_END) {
+    const p = t1 / DIVE_PHASE1_END;
+    return {
+      mountainScale: SCALE_BASE + (SCALE_AFTER_PHASE1 - SCALE_BASE) * easeOutCubic(p),
+      mountainDarken: DARKEN_BASE + (DARKEN_AFTER_PHASE1 - DARKEN_BASE) * p,
+      mountainBlur: 0,
+      mountainOpacity: 1,
+      particlesOpacity: 0,
+    };
+  }
+
+  if (t1 <= DIVE_PHASE2_END) {
+    const p = (t1 - DIVE_PHASE1_END) / (DIVE_PHASE2_END - DIVE_PHASE1_END);
+    const pe = easeInCubic(p);
+    return {
+      mountainScale: SCALE_AFTER_PHASE1 + (SCALE_AFTER_PHASE2 - SCALE_AFTER_PHASE1) * pe,
+      mountainDarken: DARKEN_AFTER_PHASE1 + (DARKEN_PEAK - DARKEN_AFTER_PHASE1) * pe,
+      mountainBlur: BLUR_PEAK * pe,
+      mountainOpacity: 1,
+      particlesOpacity: 0,
+    };
+  }
+
+  const p = (t1 - DIVE_PHASE2_END) / (1 - DIVE_PHASE2_END);
+  const pe = easeInOutCubic(p);
+  return {
+    mountainScale: SCALE_AFTER_PHASE2,
+    mountainDarken: DARKEN_PEAK * (1 - pe),
+    mountainBlur: BLUR_PEAK * (1 - pe),
+    mountainOpacity: 1 - pe,
+    particlesOpacity: pe,
+  };
+}
+
 function Hero() {
   const sectionRefs = useRef([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -118,17 +186,19 @@ function Hero() {
 
       // rawProgress: 0 = верх секции 1 (звёзды), 1 = верх секции 2 (горы), 2 = верх секции 3 (частицы)
       const rawProgress = Math.min(Math.max(raw, 0), SECTIONS.length - 1);
-      const e0 = easeInOutCubic(clamp01(rawProgress)); // переход 1→2: звёзды → горы
-      const e1 = easeInOutCubic(clamp01(rawProgress - 1)); // переход 2→3: погружение в горы → частицы
+      const t0 = clamp01(rawProgress); // переход 1→2: звёзды → горы
+      const t1 = clamp01(rawProgress - 1); // переход 2→3: погружение в горы → частицы
+
+      const e0 = starsToMountainProgress(t0);
+      const dive = computeDiveEffect(t1);
 
       const starsOpacity = 1 - e0;
       const mountainFadeIn = e0;
-      const mountainScale = 1 + 0.45 * e1;
-      const mountainDarken = 0.3 + 0.55 * e1;
-      const mountainBlur = clamp01((e1 - 0.5) * 2) * 4;
-      const mountainFadeOut = 1 - clamp01((e1 - 0.7) / 0.3);
-      const mountainOpacity = mountainFadeIn * mountainFadeOut;
-      const particlesOpacity = clamp01((e1 - 0.55) / 0.45);
+      const mountainScale = dive.mountainScale;
+      const mountainDarken = dive.mountainDarken;
+      const mountainBlur = dive.mountainBlur;
+      const mountainOpacity = mountainFadeIn * dive.mountainOpacity;
+      const particlesOpacity = dive.particlesOpacity;
       const particlesScale = 1.08 - 0.08 * particlesOpacity;
       const particlesBrightness = 0.7 + 0.3 * particlesOpacity;
 
