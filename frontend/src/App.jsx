@@ -5,12 +5,13 @@ import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Placeholder from "./pages/Placeholder";
+import { RegisterModalProvider } from "./context/RegisterModalContext";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <>
+    <RegisterModalProvider>
       <Navbar sidebarOpen={sidebarOpen} onBurgerClick={() => setSidebarOpen((open) => !open)} />
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main>
@@ -25,7 +26,7 @@ function App() {
         </Routes>
       </main>
       <Footer />
-    </>
+    </RegisterModalProvider>
   );
 }
 

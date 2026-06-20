@@ -1,8 +1,11 @@
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useRegisterModal } from "../context/RegisterModalContext";
 import "./Navbar.css";
 
 function Navbar({ sidebarOpen, onBurgerClick }) {
+  const { openRegisterModal } = useRegisterModal();
+
   return (
     <header className="navbar">
       <div className="navbar__inner">
@@ -24,7 +27,7 @@ function Navbar({ sidebarOpen, onBurgerClick }) {
           <button type="button" className="btn btn--ghost navbar__login">
             Войти
           </button>
-          <button type="button" className="btn btn--primary">
+          <button type="button" className="btn btn--primary" onClick={openRegisterModal}>
             Регистрация
           </button>
         </div>

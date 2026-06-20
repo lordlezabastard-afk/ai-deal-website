@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useRegisterModal } from "../context/RegisterModalContext";
 import "./Hero.css";
 
 // TODO: когда появятся реальные файлы — заменить на:
@@ -263,6 +264,8 @@ function Hero() {
     sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  const { openRegisterModal } = useRegisterModal();
+
   return (
     <>
       <canvas ref={canvasRef} className="hero-fixed-canvas" />
@@ -304,7 +307,7 @@ function Hero() {
                 <button className="btn btn--ghost">{section.secondaryBtn.label}</button>
               </div>
               <div className="hero__cta">
-                <button type="button" className="hero__cta-btn">
+                <button type="button" className="hero__cta-btn" onClick={openRegisterModal}>
                   РЕГИСТРАЦИЯ
                 </button>
               </div>

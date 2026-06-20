@@ -1,0 +1,213 @@
+.register-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: register-modal-fade-in 0.25s ease forwards;
+}
+
+@keyframes register-modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.register-modal {
+  position: relative;
+  width: 420px;
+  max-width: 90vw;
+  padding: 36px 32px;
+  background: rgba(13, 13, 20, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  box-shadow: 0 0 40px rgba(124, 58, 237, 0.35);
+  clip-path: polygon(
+    18px 0,
+    calc(100% - 18px) 0,
+    100% 18px,
+    100% calc(100% - 18px),
+    calc(100% - 18px) 100%,
+    18px 100%,
+    0 calc(100% - 18px),
+    0 18px
+  );
+  animation: register-modal-scale-in 0.25s ease forwards;
+}
+
+@keyframes register-modal-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.register-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0;
+  transition: color 0.2s ease;
+}
+
+.register-modal__close:hover {
+  color: var(--color-text);
+}
+
+.register-modal__title {
+  margin: 0 0 20px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.register-modal__tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.register-modal__tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.register-modal__tab--active {
+  color: var(--color-accent-light);
+  border-bottom-color: var(--color-accent-light);
+}
+
+.register-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.register-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.register-modal__field label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.register-modal__field input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 15px;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.register-modal__field input:focus {
+  border-color: var(--color-accent-light);
+}
+
+.register-modal__password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.register-modal__password-wrap input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.register-modal__eye {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0;
+}
+
+.register-modal__error {
+  font-size: 12px;
+  color: #f87171;
+}
+
+.register-modal__error--general {
+  text-align: center;
+}
+
+.register-modal__submit-btn {
+  margin-top: 8px;
+  background: transparent;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  border-radius: var(--radius-sm);
+  padding: 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.register-modal__submit-btn:hover:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.45);
+}
+
+.register-modal__submit-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.register-modal__success {
+  text-align: center;
+  color: var(--color-green);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0;
+}
+
+.register-modal__telegram-placeholder {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 24px 0;
+}
+
+@media (max-width: 480px) {
+  .register-modal {
+    padding: 28px 20px;
+  }
+}
