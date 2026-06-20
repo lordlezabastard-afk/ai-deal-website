@@ -1,5 +1,6 @@
 import { Home, BookOpen, Users, Wrench, Wallet, User, Shield, Map, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "./Sidebar.css";
 
 const MENU_TOP = [
@@ -17,8 +18,10 @@ const MENU_BOTTOM = [
 
 function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   function handleLogout() {
+    logout();
     onClose();
     navigate("/");
   }

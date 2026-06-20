@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
-import { API_URL } from "../config";
+import { useAuth } from "../context/AuthContext";
 import "./RegisterModal.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const EMPTY_FORM = { displayName: "", email: "", password: "", confirmPassword: "" };
 
-function RegisterModal({ isOpen, onClose }) {
+function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
+  const { register } = useAuth();
   const [activeTab, setActiveTab] = useState("email");
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
@@ -66,29 +67,14 @@ function RegisterModal({ isOpen, onClose }) {
     setStatus("loading");
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/register-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-          displayName: form.displayName,
-        }),
-      });
-
-      if (response.ok) {
-        setStatus("success");
-        return;
-      }
-
-      if (response.status === 409) {
+      await register(form.email, form.password, form.displayName);
+      setStatus("success");
+    } catch (error) {
+      if (error.status === 409) {
         setErrors({ email: "Этот email уже зарегистрирован" });
       } else {
         setErrors({ general: "Что-то пошло не так, попробуйте позже" });
       }
-      setStatus("idle");
-    } catch {
-      setErrors({ general: "Что-то пошло не так, попробуйте позже" });
       setStatus("idle");
     }
   };
@@ -204,6 +190,15 @@ function RegisterModal({ isOpen, onClose }) {
         ) : (
           <p className="register-modal__telegram-placeholder">
             Вход через Telegram будет доступен в ближайшее время
+          </p>
+        )}
+
+        {status !== "success" && (
+          <p className="register-modal__switch">
+            Уже есть аккаунт?{" "}
+            <button type="button" className="register-modal__switch-link" onClick={onSwitchToLogin}>
+              Войти
+            </button>
           </p>
         )}
       </div>

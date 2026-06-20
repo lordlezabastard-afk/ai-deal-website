@@ -1,10 +1,12 @@
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useRegisterModal } from "../context/RegisterModalContext";
+import { useAuthModal } from "../context/AuthModalContext";
+import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
 
 function Navbar({ sidebarOpen, onBurgerClick }) {
-  const { openRegisterModal } = useRegisterModal();
+  const { openRegisterModal, openLoginModal } = useAuthModal();
+  const { isAuthenticated } = useAuth();
 
   return (
     <header className="navbar">
@@ -23,14 +25,20 @@ function Navbar({ sidebarOpen, onBurgerClick }) {
           </button>
         </div>
 
-        <div className="navbar__right">
-          <button type="button" className="btn btn--ghost navbar__login">
-            Войти
-          </button>
-          <button type="button" className="btn btn--primary" onClick={openRegisterModal}>
-            Регистрация
-          </button>
-        </div>
+        {!isAuthenticated && (
+          <div className="navbar__right">
+            <button
+              type="button"
+              className="btn navbar__auth-btn navbar__login beam-btn"
+              onClick={openLoginModal}
+            >
+              Войти
+            </button>
+            <button type="button" className="btn navbar__auth-btn beam-btn" onClick={openRegisterModal}>
+              Регистрация
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

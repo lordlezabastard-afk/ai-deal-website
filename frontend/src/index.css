@@ -1,3 +1,5 @@
+@import "./styles/beam-button.css";
+
 :root {
   --color-bg: #0a0a12;
   --color-bg-card: #10101c;

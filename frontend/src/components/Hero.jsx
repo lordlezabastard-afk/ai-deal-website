@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useRegisterModal } from "../context/RegisterModalContext";
+import { useAuthModal } from "../context/AuthModalContext";
+import { useAuth } from "../context/AuthContext";
 import "./Hero.css";
 
 // TODO: когда появятся реальные файлы — заменить на:
@@ -264,7 +265,8 @@ function Hero() {
     sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const { openRegisterModal } = useRegisterModal();
+  const { openRegisterModal } = useAuthModal();
+  const { isAuthenticated } = useAuth();
 
   return (
     <>
@@ -306,11 +308,17 @@ function Hero() {
                 )}
                 <button className="btn btn--ghost">{section.secondaryBtn.label}</button>
               </div>
-              <div className="hero__cta">
-                <button type="button" className="hero__cta-btn" onClick={openRegisterModal}>
-                  РЕГИСТРАЦИЯ
-                </button>
-              </div>
+              {!isAuthenticated && (
+                <div className="hero__cta">
+                  <button
+                    type="button"
+                    className="hero__cta-btn beam-btn"
+                    onClick={openRegisterModal}
+                  >
+                    РЕГИСТРАЦИЯ
+                  </button>
+                </div>
+              )}
             </div>
           );
 
