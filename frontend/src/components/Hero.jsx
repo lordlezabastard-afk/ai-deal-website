@@ -19,6 +19,7 @@ const SECTIONS = [
     subtitle:
       "Платформа для обучения AI-технологиям, автоматизации бизнеса и построения партнёрской сети с пожизненным доходом",
     accent: "#a78bfa",
+    bg: foneStars,
     primaryBtn: null,
     secondaryBtn: { label: "Узнать больше" },
   },
@@ -36,6 +37,7 @@ const SECTIONS = [
     subtitle:
       "Мощный набор средств для вашего бизнеса. Поможет внедрить нейросети и облачные сервисы. Автоматизирует задачи, улучшит процессы и увеличит производительность. Всё готово к использованию",
     accent: "#34d399",
+    bg: foneMountain,
     primaryBtn: { label: "Смотреть курсы", bg: "#059669" },
     secondaryBtn: { label: "Как это работает" },
   },
@@ -50,6 +52,7 @@ const SECTIONS = [
     subtitle:
       "Приглашай партнёров и зарабатывай с трёх уровней структуры. Чем больше команда — тем выше доход.",
     accent: "#fbbf24",
+    bg: foneParticles,
     primaryBtn: { label: "Начать зарабатывать", bg: "#b45309" },
     secondaryBtn: { label: "Условия партнёрки" },
   },
@@ -93,17 +96,6 @@ function easeInCubic(t) {
 
 function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
-}
-
-// Cross-fade звёзды → горы растянут на 80% диапазона скролла между секциями
-// (вместо мгновенного fade на первых 20-30%): по 10% в начале и конце прогресса
-// фон остаётся "спокойным", а основная часть перехода — плавный eased crossfade.
-const FADE_WINDOW_START = 0.1;
-const FADE_WINDOW_END = 0.9;
-
-function starsToMountainProgress(t0) {
-  const windowed = clamp01((t0 - FADE_WINDOW_START) / (FADE_WINDOW_END - FADE_WINDOW_START));
-  return easeInOutCubic(windowed);
 }
 
 // Фазовый эффект "погружения" горы → частицы:
@@ -160,15 +152,15 @@ function Hero() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isInHero, setIsInHero] = useState(true);
 
-  const starsLayerRef = useRef(null);
   const mountainLayerRef = useRef(null);
   const overlayRef = useRef(null);
   const particlesLayerRef = useRef(null);
 
   // Следим за скроллом страницы (единый document-скролл, без вложенного scroll-контейнера):
-  // какая Hero-секция активна (для индикатора-точек), и считаем прогресс перехода между
-  // фоновыми картинками 3 секций — звёзды → горы (обычный fade) и горы → частицы
-  // (кинематографичное "погружение": zoom-in + затемнение + блюр + cross-fade).
+  // какая Hero-секция активна (для индикатора-точек), и считаем прогресс эффекта "погружения"
+  // между секцией 2 (горы) и секцией 3 (частицы) — это единственный спецэффект перехода.
+  // Между секцией 1 и секцией 2 никакой анимации фона нет: это просто два обычных
+  // последовательных scroll-snap экрана со своими картинками-фонами.
   useEffect(() => {
     let ticking = false;
 
@@ -186,32 +178,27 @@ function Hero() {
 
       // rawProgress: 0 = верх секции 1 (звёзды), 1 = верх секции 2 (горы), 2 = верх секции 3 (частицы)
       const rawProgress = Math.min(Math.max(raw, 0), SECTIONS.length - 1);
-      const t0 = clamp01(rawProgress); // переход 1→2: звёзды → горы
-      const t1 = clamp01(rawProgress - 1); // переход 2→3: погружение в горы → частицы
+      const t1 = clamp01(rawProgress - 1); // прогресс погружения горы → частицы
 
-      const e0 = starsToMountainProgress(t0);
+      // Слои погружения (mountain/overlay/particles) — это фиксированный поверх-документа
+      // оверлей, который имеет смысл ТОЛЬКО начиная с секции 2 (горы). Пока пользователь
+      // находится в секции 1 (звёзды), он полностью невидим — у секции 1 свой обычный фон.
+      const isPastSection1 = rawProgress >= 1;
       const dive = computeDiveEffect(t1);
 
-      const starsOpacity = 1 - e0;
-      const mountainFadeIn = e0;
-      const mountainScale = dive.mountainScale;
-      const mountainDarken = dive.mountainDarken;
-      const mountainBlur = dive.mountainBlur;
-      const mountainOpacity = mountainFadeIn * dive.mountainOpacity;
+      const mountainOpacity = isPastSection1 ? dive.mountainOpacity : 0;
+      const overlayOpacity = isPastSection1 ? dive.mountainDarken * dive.mountainOpacity : 0;
       const particlesOpacity = dive.particlesOpacity;
       const particlesScale = 1.08 - 0.08 * particlesOpacity;
       const particlesBrightness = 0.7 + 0.3 * particlesOpacity;
 
-      if (starsLayerRef.current) {
-        starsLayerRef.current.style.opacity = String(starsOpacity);
-      }
       if (mountainLayerRef.current) {
         mountainLayerRef.current.style.opacity = String(mountainOpacity);
-        mountainLayerRef.current.style.transform = `scale(${mountainScale})`;
-        mountainLayerRef.current.style.filter = `blur(${mountainBlur}px)`;
+        mountainLayerRef.current.style.transform = `scale(${dive.mountainScale})`;
+        mountainLayerRef.current.style.filter = `blur(${dive.mountainBlur}px)`;
       }
       if (overlayRef.current) {
-        overlayRef.current.style.opacity = String(mountainDarken * mountainOpacity);
+        overlayRef.current.style.opacity = String(overlayOpacity);
       }
       if (particlesLayerRef.current) {
         particlesLayerRef.current.style.opacity = String(particlesOpacity);
@@ -250,13 +237,8 @@ function Hero() {
     <>
       <div className="hero-bg">
         <div
-          ref={starsLayerRef}
-          className="hero-bg__layer"
-          style={{ backgroundImage: `url(${foneStars})`, opacity: 1 }}
-        />
-        <div
           ref={mountainLayerRef}
-          className="hero-bg__layer"
+          className="hero-bg__layer hero-bg__layer--mountain"
           style={{ backgroundImage: `url(${foneMountain})` }}
         />
         <div ref={overlayRef} className="hero-bg__overlay" />
@@ -274,6 +256,7 @@ function Hero() {
             key={section.id}
             ref={(el) => (sectionRefs.current[i] = el)}
             className="hero-section"
+            style={{ backgroundImage: `url(${section.bg})` }}
           >
             <div className="hero__content">
               <div className="hero__icon" style={{ color: section.accent }}>

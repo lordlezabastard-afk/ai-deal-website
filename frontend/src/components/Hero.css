@@ -1,7 +1,10 @@
 .hero-bg {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  /* z-index:1, а не 0: должен рисоваться НАД собственным фоном каждой hero-section
+     (иначе слои погружения/затемнения не видны поверх статичной картинки секции),
+     но под Stats/Features/Footer ниже по странице (см. их z-index:1 + порядок в DOM). */
+  z-index: 1;
   overflow: hidden;
   background: #05050a;
 }
@@ -13,6 +16,12 @@
   background-position: center;
   opacity: 0;
   will-change: opacity, transform, filter;
+}
+
+/* Камера "ныряния" летит к озеру/отражению в нижней части кадра, а не к человеку
+   на скале в центре — поэтому точка масштабирования смещена вниз от середины. */
+.hero-bg__layer--mountain {
+  transform-origin: 50% 78%;
 }
 
 .hero-bg__overlay {
@@ -48,7 +57,8 @@
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
-  background: transparent;
+  background-size: cover;
+  background-position: center;
 }
 
 .hero__content {

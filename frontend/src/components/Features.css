@@ -1,4 +1,8 @@
 .features {
+  position: relative;
+  /* см. комментарий в Stats.css — без z-index секция уходит под фиксированный
+     фон Hero и становится невидимой. */
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;

@@ -1,4 +1,8 @@
 .stats {
+  position: relative;
+  /* Hero выше по странице держит position:fixed фоновый слой (z-index:1) —
+     без этого z-index секция оказывается под ним и становится невидимой. */
+  z-index: 1;
   display: flex;
   max-width: 900px;
   margin: 0 auto;
