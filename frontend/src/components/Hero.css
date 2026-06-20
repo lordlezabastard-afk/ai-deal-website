@@ -76,27 +76,37 @@
    перекрытия, фон каждой секции гаснет не в чёрноту, а в общий синий тон ночного
    неба (между #0a1530 и #1a3a6e), близкий к цвету низа звёзд и верха гор. */
 .hero-section__bg--fade-bottom {
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 87%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 0%, #000 87%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 75%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 75%, transparent 100%);
 }
 
 .hero-section__bg--fade-bottom::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent 55%, rgba(21, 41, 92, 0.85) 100%);
+  background: linear-gradient(
+    to bottom,
+    transparent 45%,
+    rgba(16, 32, 72, 0.55) 75%,
+    rgba(16, 32, 72, 0.92) 100%
+  );
 }
 
 .hero-section__bg--fade-top {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 13%, #000 100%);
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 13%, #000 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 100%);
 }
 
 .hero-section__bg--fade-top::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(21, 41, 92, 0.85) 0%, transparent 45%);
+  background: linear-gradient(
+    to bottom,
+    rgba(16, 32, 72, 0.92) 0%,
+    rgba(16, 32, 72, 0.55) 25%,
+    transparent 55%
+  );
 }
 
 .hero__content {
