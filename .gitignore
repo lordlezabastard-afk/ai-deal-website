@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+appsettings.Development.json
