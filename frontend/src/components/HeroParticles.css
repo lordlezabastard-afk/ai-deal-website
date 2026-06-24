@@ -8,3 +8,9 @@
   pointer-events: none;
   will-change: transform;
 }
+
+@media (max-width: 768px) {
+  .hero-particles {
+    opacity: 0.4;
+  }
+}

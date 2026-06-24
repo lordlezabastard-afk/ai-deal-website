@@ -155,7 +155,7 @@ function Hero() {
               <h1 className="hero__title">
                 {section.titleParts.map((part, idx) =>
                   part.highlight ? (
-                    <span key={idx} style={{ color: section.accent }}>
+                    <span key={idx} className="hero-accent">
                       {part.text}
                     </span>
                   ) : (

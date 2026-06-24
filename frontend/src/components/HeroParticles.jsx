@@ -70,8 +70,24 @@ function seededRandom(seed) {
   };
 }
 
+// Центр всех трёх форм смещён вправо — на десктопе текст занимает левую половину
+// Hero, визуал (сфера/мозг/руки) — правую, центр формы садится на 73% ширины.
+const SHAPE_CENTER_X_RATIO = 0.73;
+
+function isPointInPolygon(x, y, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    const intersects =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
 function generateSphere(count, width, height) {
-  const cx = width * 0.62;
+  const cx = width * SHAPE_CENTER_X_RATIO;
   const cy = height * 0.48;
   const radius = Math.min(width, height) * 0.38;
   const points = [];
@@ -91,74 +107,184 @@ function sphereLivePosition(p, rotation) {
   };
 }
 
+// Нормализованные точки контура мозга (вид сбоку, 0..1 относительно bounding box).
+const BRAIN_OUTLINE = [
+  [0.15, 0.35], [0.18, 0.2], [0.25, 0.1], [0.35, 0.05],
+  [0.45, 0.03], [0.55, 0.04], [0.63, 0.08], [0.7, 0.12],
+  [0.76, 0.09], [0.82, 0.13], [0.87, 0.2], [0.9, 0.28],
+  [0.92, 0.38], [0.91, 0.48],
+  [0.88, 0.55], [0.85, 0.62], [0.8, 0.68],
+  [0.72, 0.73], [0.62, 0.76], [0.55, 0.78],
+  [0.48, 0.77], [0.4, 0.74],
+  [0.3, 0.68], [0.22, 0.6], [0.16, 0.5], [0.13, 0.42],
+];
+
 function generateBrain(count, width, height) {
-  const cx = width * 0.58;
+  const cx = width * SHAPE_CENTER_X_RATIO;
   const cy = height * 0.5;
-  const scale = Math.min(width, height) * 0.3;
-  const points = [];
-  // Силуэт мозга — два налегающих эллипса-полушария, заполненные точками (rejection
-  // sampling), с узкой щелью посередине (продольная борозда). Заполнение области, а не
-  // тонкая параметрическая кривая, даёт читаемый плотный силуэт вместо спутанной "загогулины".
+  const scale = Math.min(width, height) * 0.62;
+  const boxW = scale;
+  const boxH = scale * 0.85;
+  const originX = cx - boxW / 2;
+  const originY = cy - boxH / 2;
   const rand = seededRandom(7);
-  const rx = scale * 0.42;
-  const ry = scale * 0.34;
-  const lobeOffset = scale * 0.24;
-  const sulcusHalfWidth = scale * 0.025;
-  const left = { x: cx - lobeOffset, y: cy };
-  const right = { x: cx + lobeOffset, y: cy };
 
-  function inLobe(x, y, lobe) {
-    const dx = (x - lobe.x) / rx;
-    const dy = (y - lobe.y) / ry;
-    return dx * dx + dy * dy <= 1;
+  function toPixel([nx, ny]) {
+    return [originX + nx * boxW, originY + ny * boxH];
   }
+  const outlinePx = BRAIN_OUTLINE.map(toPixel);
 
-  for (let i = 0; i < count; i++) {
-    let x;
-    let y;
-    let attempts = 0;
-    do {
-      x = cx + (rand() * 2 - 1) * (rx + lobeOffset);
-      y = cy + (rand() * 2 - 1) * ry;
-      attempts++;
-    } while (
-      attempts < 12 &&
-      (Math.abs(x - cx) < sulcusHalfWidth || !(inLobe(x, y, left) || inLobe(x, y, right)))
-    );
-    points.push({ x, y });
-  }
-  return points;
-}
-
-// Метафора партнёрства: две сферы, тянущиеся друг к другу и соприкасающиеся в центре.
-// Заменяет исходную идею "рукопожатие" — параметрическая кривая ладони/пальцев
-// давала нечитаемый спутанный силуэт; пара чётких сфер читается мгновенно.
-function generateHandshake(count, width, height) {
-  const cy = height * 0.5;
-  const cx = width * 0.5;
-  const r = Math.min(width, height) * 0.16;
-  const leftCenter = { x: cx - r, y: cy };
-  const rightCenter = { x: cx + r, y: cy };
-  const rand = seededRandom(13);
-  const points = [];
-  const halfCount = Math.floor(count / 2);
-
-  function fillDisk(count_, center) {
+  // Шаг 1 — плотная заливка силуэта (rejection sampling + ray casting).
+  function fillSilhouette(n) {
     const pts = [];
-    for (let i = 0; i < count_; i++) {
-      const angle = rand() * Math.PI * 2;
-      const radius = r * Math.sqrt(rand());
-      pts.push({
-        x: center.x + radius * Math.cos(angle),
-        y: center.y + radius * Math.sin(angle),
-      });
+    let guard = 0;
+    while (pts.length < n && guard < n * 40) {
+      guard++;
+      const x = originX + rand() * boxW;
+      const y = originY + rand() * boxH;
+      if (isPointInPolygon(x, y, outlinePx)) pts.push({ x, y, emphasis: 0 });
     }
     return pts;
   }
 
-  points.push(...fillDisk(halfCount, leftCenter));
-  points.push(...fillDisk(count - halfCount, rightCenter));
-  return points;
+  // Шаг 2 — извилины: частицы вдоль bezier-дуг внутри формы.
+  function gyriPoints(n) {
+    const arcs = 6;
+    const perArc = Math.ceil(n / arcs);
+    const pts = [];
+    for (let a = 0; a < arcs && pts.length < n; a++) {
+      const yLevel = 0.18 + (a / (arcs - 1)) * 0.55;
+      const p0 = toPixel([0.18, yLevel]);
+      const p1 = toPixel([0.4, yLevel - 0.06 + rand() * 0.05]);
+      const p2 = toPixel([0.65, yLevel + 0.06 - rand() * 0.05]);
+      const p3 = toPixel([0.85, yLevel]);
+      for (let s = 0; s < perArc && pts.length < n; s++) {
+        const t = s / perArc;
+        const mt = 1 - t;
+        const x =
+          mt * mt * mt * p0[0] + 3 * mt * mt * t * p1[0] + 3 * mt * t * t * p2[0] + t * t * t * p3[0];
+        const y =
+          mt * mt * mt * p0[1] + 3 * mt * mt * t * p1[1] + 3 * mt * t * t * p2[1] + t * t * t * p3[1];
+        if (isPointInPolygon(x, y, outlinePx)) pts.push({ x, y, emphasis: 0 });
+      }
+    }
+    return pts;
+  }
+
+  // Шаг 3 — нейронные лучи: от границы формы наружу, с яркой конечной точкой.
+  function rayPoints(n) {
+    const pts = [];
+    const avgPerRay = 5;
+    const numRays = Math.max(1, Math.round(n / avgPerRay));
+    for (let i = 0; i < numRays && pts.length < n; i++) {
+      const angle = (i / numRays) * Math.PI * 2 + (rand() - 0.5) * 0.3;
+      const startR = scale * (0.38 + rand() * 0.08);
+      const endR = scale * (0.52 + rand() * 0.22);
+      const startX = cx + Math.cos(angle) * startR * 0.85;
+      const startY = cy + Math.sin(angle) * startR * 0.72;
+      const endX = cx + Math.cos(angle) * endR * 0.85;
+      const endY = cy + Math.sin(angle) * endR * 0.72;
+      const segments = 3 + Math.floor(rand() * 3);
+      for (let s = 0; s <= segments && pts.length < n; s++) {
+        const t = s / segments;
+        const isEndPoint = s === segments;
+        pts.push({
+          x: startX + (endX - startX) * t,
+          y: startY + (endY - startY) * t,
+          emphasis: isEndPoint ? 1 : t * 0.55,
+        });
+      }
+    }
+    return pts;
+  }
+
+  const rayCount = Math.round(count * 0.2);
+  const gyriCount = Math.round(count * 0.1);
+  const bodyCount = count - rayCount - gyriCount;
+
+  const points = [...fillSilhouette(bodyCount), ...gyriPoints(gyriCount), ...rayPoints(rayCount)];
+  while (points.length < count) points.push({ ...points[points.length % Math.max(1, points.length)] });
+  return points.slice(0, count);
+}
+
+// Нормализованные точки контура руки относительно центра формы (запястье сверху-слева,
+// пальцы тянутся к центру). Правая рука — зеркальное и перевёрнутое отражение левой,
+// руки встречаются в центре.
+const LEFT_HAND_POINTS = [
+  [-0.42, -0.28], [-0.35, -0.25], [-0.28, -0.22], [-0.38, -0.18],
+  [-0.25, -0.15], [-0.18, -0.1], [-0.12, -0.05],
+  [-0.2, -0.08], [-0.15, -0.02], [-0.1, 0.03],
+  [-0.22, -0.12], [-0.26, -0.06], [-0.24, 0.0],
+  [-0.08, -0.08], [-0.04, -0.02], [-0.02, 0.04],
+  [-0.05, -0.1], [0.0, -0.04], [0.02, 0.03], [0.03, 0.08],
+  [-0.02, -0.08], [0.02, -0.02], [0.04, 0.04],
+  [0.01, -0.06], [0.05, -0.01], [0.06, 0.04],
+];
+const RIGHT_HAND_POINTS = LEFT_HAND_POINTS.map(([x, y]) => [-x, -y]);
+
+function generateHandshake(count, width, height) {
+  const cx = width * SHAPE_CENTER_X_RATIO;
+  const cy = height * 0.5;
+  const scale = Math.min(width, height) * 1.15;
+  const rand = seededRandom(13);
+
+  function toPixel([nx, ny]) {
+    return [cx + nx * scale, cy + ny * scale];
+  }
+  const leftPoly = LEFT_HAND_POINTS.map(toPixel);
+  const rightPoly = RIGHT_HAND_POINTS.map(toPixel);
+
+  function bbox(poly) {
+    const xs = poly.map((p) => p[0]);
+    const ys = poly.map((p) => p[1]);
+    return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+  }
+
+  function fillHand(n, poly) {
+    const box = bbox(poly);
+    const pts = [];
+    let guard = 0;
+    while (pts.length < n && guard < n * 40) {
+      guard++;
+      const x = box.minX + rand() * (box.maxX - box.minX);
+      const y = box.minY + rand() * (box.maxY - box.minY);
+      if (isPointInPolygon(x, y, poly)) {
+        const dist = Math.hypot(x - cx, y - cy);
+        const energy = dist < scale * 0.05 ? 1 : 0;
+        pts.push({ x, y, emphasis: energy });
+      }
+    }
+    return pts;
+  }
+
+  const halfCount = Math.floor(count / 2);
+  const points = [...fillHand(halfCount, leftPoly), ...fillHand(count - halfCount, rightPoly)];
+  while (points.length < count) points.push({ ...points[points.length % Math.max(1, points.length)] });
+  return points.slice(0, count);
+}
+
+const CONNECTIONS_MAX_PARTICLES = 800;
+const CONNECTIONS_MAX_DIST = 35;
+
+function drawConnections(particles, ctx, maxDist, alphaScale) {
+  if (alphaScale <= 0.01) return;
+  ctx.lineWidth = 0.5;
+  const n = Math.min(particles.length, CONNECTIONS_MAX_PARTICLES);
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < maxDist) {
+        const alpha = (1 - dist / maxDist) * 0.3 * alphaScale;
+        ctx.strokeStyle = `rgba(128, 82, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
+      }
+    }
+  }
 }
 
 const SHAPE_GENERATORS = [generateSphere, generateBrain, generateHandshake];
@@ -212,10 +338,21 @@ function HeroParticles({ activeIndex }) {
           breathPhase: rand() * Math.PI * 2,
           repelX: 0,
           repelY: 0,
+          emphasis: 0,
+          fromEmphasis: 0,
+          toEmphasis: 0,
         });
       }
 
-      return { particles, layouts, sphereRotation: 0, morphStart: 0, morphing: false };
+      return {
+        particles,
+        layouts,
+        sphereRotation: 0,
+        morphStart: 0,
+        morphing: false,
+        morphTarget: 0,
+        handshakeFactor: 0,
+      };
     }
 
     stateRef.current = buildParticles();
@@ -225,10 +362,13 @@ function HeroParticles({ activeIndex }) {
       const targetLayout = state.layouts[targetIndex];
       const targetPalette = SECTION_PALETTES[targetIndex];
       const rand = seededRandom(100 + targetIndex);
+      state.fromIndex = state.morphTarget;
       state.particles.forEach((particle, i) => {
         particle.fromX = particle.x;
         particle.fromY = particle.y;
         particle.fromColor = [...particle.color];
+        particle.fromEmphasis = particle.emphasis;
+        let targetEmphasis = 0;
         if (targetIndex === 0) {
           const live = sphereLivePosition(state.layouts[0][i], state.sphereRotation);
           particle.toX = live.x;
@@ -237,8 +377,12 @@ function HeroParticles({ activeIndex }) {
           const p = targetLayout[i];
           particle.toX = p.x;
           particle.toY = p.y;
+          targetEmphasis = p.emphasis || 0;
         }
-        particle.toColor = pickWeighted(rand(), targetPalette).color;
+        particle.toEmphasis = targetEmphasis;
+        const emphasisColor =
+          targetEmphasis > 0.5 ? PALETTE.bone : pickWeighted(rand(), targetPalette).color;
+        particle.toColor = emphasisColor;
       });
       state.morphStart = performance.now();
       state.morphing = true;
@@ -261,12 +405,14 @@ function HeroParticles({ activeIndex }) {
     }
 
     function drawParticle(p) {
-      ctx.fillStyle = `rgba(${Math.round(p.color[0])},${Math.round(p.color[1])},${Math.round(
-        p.color[2]
-      )},${p.opacity})`;
+      const c = lerpColor(p.color, PALETTE.bone, p.emphasis * 0.8);
+      const opacity = Math.min(1, p.opacity + p.emphasis * 0.5);
+      ctx.fillStyle = `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(
+        c[2]
+      )},${opacity})`;
       const x = p.x;
       const y = p.y;
-      const s = p.size;
+      const s = p.size * (1 + p.emphasis * 1.4);
       if (p.shape === "circle") {
         ctx.beginPath();
         ctx.arc(x, y, s / 2, 0, Math.PI * 2);
@@ -318,12 +464,21 @@ function HeroParticles({ activeIndex }) {
         });
       }
 
+      const desiredHandshakeFactor =
+        state.morphing
+          ? lerp(state.fromIndex === 2 ? 1 : 0, state.morphTarget === 2 ? 1 : 0, eased)
+          : activeIndexRef.current === 2
+          ? 1
+          : 0;
+      state.handshakeFactor = desiredHandshakeFactor;
+
       ctx.clearRect(0, 0, width, height);
 
       state.particles.forEach((p) => {
         const baseX = lerp(p.fromX, p.toX, eased);
         const baseY = lerp(p.fromY, p.toY, eased);
         p.color = lerpColor(p.fromColor, p.toColor, eased);
+        p.emphasis = lerp(p.fromEmphasis, p.toEmphasis, eased);
 
         const breathX = Math.sin(now * 0.001 * p.breathFreq + p.breathPhase) * p.breathAmpX;
         const breathY = Math.cos(now * 0.0013 * p.breathFreq + p.breathPhase) * p.breathAmpY;
@@ -348,6 +503,8 @@ function HeroParticles({ activeIndex }) {
 
         drawParticle(p);
       });
+
+      drawConnections(state.particles, ctx, CONNECTIONS_MAX_DIST, state.handshakeFactor);
 
       rafId = requestAnimationFrame(draw);
     }

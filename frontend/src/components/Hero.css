@@ -7,19 +7,18 @@
   height: 100vh;
   scroll-snap-align: start;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
   overflow: hidden;
   background: #000000;
+  padding: 0 7%;
 }
 
 .hero__content {
   position: relative;
   z-index: 1;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 24px;
-  text-align: center;
+  width: 50%;
+  max-width: 480px;
+  text-align: left;
 }
 
 .hero__icon {
@@ -34,7 +33,7 @@
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   padding: 6px 14px;
   border: 1px solid rgba(128, 82, 255, 0.3);
   border-radius: var(--radius);
@@ -43,8 +42,8 @@
 }
 
 .hero__title {
-  font-size: var(--text-display);
-  line-height: 0.9;
+  font-size: 52px;
+  line-height: 1.05;
   font-weight: 200;
   letter-spacing: -0.04em;
   margin: 0 0 16px;
@@ -52,17 +51,43 @@
 }
 
 .hero__subtitle {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 400;
-  line-height: 1.5;
+  line-height: 1.6;
   letter-spacing: 0.025em;
   color: var(--color-ash);
+  max-width: 420px;
   margin: 0 0 28px;
+}
+
+.hero-accent {
+  color: #8052ff;
+  position: relative;
+  display: inline-block;
+  text-shadow:
+    0 0 20px rgba(128, 82, 255, 0.6),
+    0 0 40px rgba(128, 82, 255, 0.3);
+  animation: accentPulse 3s ease-in-out infinite;
+}
+
+@keyframes accentPulse {
+  0%,
+  100% {
+    text-shadow:
+      0 0 15px rgba(128, 82, 255, 0.5),
+      0 0 30px rgba(128, 82, 255, 0.25);
+  }
+  50% {
+    text-shadow:
+      0 0 25px rgba(128, 82, 255, 0.8),
+      0 0 50px rgba(128, 82, 255, 0.4),
+      0 0 80px rgba(128, 82, 255, 0.15);
+  }
 }
 
 .hero__buttons {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 14px;
 }
 
@@ -121,24 +146,37 @@
 }
 
 @media (max-width: 768px) {
+  .hero-section {
+    padding: 0 24px;
+    justify-content: center;
+  }
+
+  .hero__content {
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .hero__buttons {
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
   .hero__title {
-    font-size: var(--text-heading-lg);
+    font-size: 36px;
   }
 
   .hero__subtitle {
     font-size: 14px;
-  }
-
-  .hero__buttons {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+    max-width: 100%;
   }
 }
 
 @media (max-width: 480px) {
   .hero__title {
-    font-size: var(--text-heading);
+    font-size: 28px;
   }
 
   .hero__content {
