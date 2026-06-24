@@ -107,71 +107,112 @@ function sphereLivePosition(p, rotation) {
   };
 }
 
-// Нормализованные точки контура мозга (вид сбоку, 0..1 относительно bounding box).
-const BRAIN_OUTLINE = [
-  [0.15, 0.35], [0.18, 0.2], [0.25, 0.1], [0.35, 0.05],
-  [0.45, 0.03], [0.55, 0.04], [0.63, 0.08], [0.7, 0.12],
-  [0.76, 0.09], [0.82, 0.13], [0.87, 0.2], [0.9, 0.28],
-  [0.92, 0.38], [0.91, 0.48],
-  [0.88, 0.55], [0.85, 0.62], [0.8, 0.68],
-  [0.72, 0.73], [0.62, 0.76], [0.55, 0.78],
-  [0.48, 0.77], [0.4, 0.74],
-  [0.3, 0.68], [0.22, 0.6], [0.16, 0.5], [0.13, 0.42],
-];
+// Контуры мозга и рукопожатия взяты из реальных SVG-иконок (Font Awesome Free,
+// CC BY 4.0 — https://fontawesome.com/license/free), а не нарисованы вручную:
+// точные path-данные дают анатомически узнаваемый силуэт с естественными
+// извилинами/пальцами без подбора координат на глаз.
+const BRAIN_VIEWBOX = { w: 512, h: 512 };
+const BRAIN_PATH_D =
+  "M184 0c30.9 0 56 25.1 56 56l0 400c0 30.9-25.1 56-56 56c-28.9 0-52.7-21.9-55.7-50.1c-5.2 1.4-10.7 2.1-16.3 2.1c-35.3 0-64-28.7-64-64c0-7.4 1.3-14.6 3.6-21.2C21.4 367.4 0 338.2 0 304c0-31.9 18.7-59.5 45.8-72.3C37.1 220.8 32 207 32 192c0-30.7 21.6-56.3 50.4-62.6C80.8 123.9 80 118 80 112c0-29.9 20.6-55.1 48.3-62.1C131.3 21.9 155.1 0 184 0zM328 0c28.9 0 52.6 21.9 55.7 49.9c27.8 7 48.3 32.1 48.3 62.1c0 6-.8 11.9-2.4 17.4c28.8 6.2 50.4 31.9 50.4 62.6c0 15-5.1 28.8-13.8 39.7C493.3 244.5 512 272.1 512 304c0 34.2-21.4 63.4-51.6 74.8c2.3 6.6 3.6 13.8 3.6 21.2c0 35.3-28.7 64-64 64c-5.6 0-11.1-.7-16.3-2.1c-3 28.2-26.8 50.1-55.7 50.1c-30.9 0-56-25.1-56-56l0-400c0-30.9 25.1-56 56-56z";
+
+const HANDSHAKE_VIEWBOX = { w: 640, h: 512 };
+const HANDSHAKE_PATH_D =
+  "M323.4 85.2l-96.8 78.4c-16.1 13-19.2 36.4-7 53.1c12.9 17.8 38 21.3 55.3 7.8l99.3-77.2c7-5.4 17-4.2 22.5 2.8s4.2 17-2.8 22.5l-20.9 16.2L512 316.8 512 128l-.7 0-3.9-2.5L434.8 79c-15.3-9.8-33.2-15-51.4-15c-21.8 0-43 7.5-60 21.2zm22.8 124.4l-51.7 40.2C263 274.4 217.3 268 193.7 235.6c-22.2-30.5-16.6-73.1 12.7-96.8l83.2-67.3c-11.6-4.9-24.1-7.4-36.8-7.4C234 64 215.7 69.6 200 80l-72 48 0 224 28.2 0 91.4 83.4c19.6 17.9 49.9 16.5 67.8-3.1c5.5-6.1 9.2-13.2 11.1-20.6l17 15.6c19.5 17.9 49.9 16.6 67.8-2.9c4.5-4.9 7.8-10.6 9.9-16.5c19.4 13 45.8 10.3 62.1-7.5c17.9-19.5 16.6-49.9-2.9-67.8l-134.2-123zM16 128c-8.8 0-16 7.2-16 16L0 352c0 17.7 14.3 32 32 32l32 0c17.7 0 32-14.3 32-32l0-224-80 0zM48 320a16 16 0 1 1 0 32 16 16 0 1 1 0-32zM544 128l0 224c0 17.7 14.3 32 32 32l32 0c17.7 0 32-14.3 32-32l0-208c0-8.8-7.2-16-16-16l-80 0zm32 208a16 16 0 1 1 32 0 16 16 0 1 1 -32 0z";
+
+// Скрытый <path> в DOM даёт доступ к точной геометрии SVG-контура без ручного
+// подбора координат: isPointInFill() — авторитетный тест "точка внутри заливки"
+// (с учётом fill-rule браузера, корректно обрабатывает вложенные subpath-ы —
+// например "дырку" между пальцами в иконке handshake); getTotalLength()/
+// getPointAtLength() — точные точки на самом контуре, для чёткой прорисовки края.
+function createPathElement(d) {
+  let pathEl = null;
+  return function ensure() {
+    if (!pathEl) {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.style.position = "absolute";
+      svg.style.width = "0";
+      svg.style.height = "0";
+      svg.style.overflow = "hidden";
+      pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathEl.setAttribute("d", d);
+      svg.appendChild(pathEl);
+      document.body.appendChild(svg);
+    }
+    return pathEl;
+  };
+}
+
+const ensureBrainPath = createPathElement(BRAIN_PATH_D);
+const ensureHandshakePath = createPathElement(HANDSHAKE_PATH_D);
+
+function isInsidePath(ensurePath, x, y) {
+  return ensurePath().isPointInFill(new DOMPoint(x, y));
+}
+
+let brainOutlineCache = null;
+function getBrainOutline() {
+  if (!brainOutlineCache) {
+    const pathEl = ensureBrainPath();
+    const length = pathEl.getTotalLength();
+    const samples = 60;
+    brainOutlineCache = Array.from({ length: samples }, (_, i) => {
+      const pt = pathEl.getPointAtLength((i / samples) * length);
+      return [pt.x / BRAIN_VIEWBOX.w, pt.y / BRAIN_VIEWBOX.h];
+    });
+  }
+  return brainOutlineCache;
+}
+let handshakeOutlineCache = null;
+function getHandshakeOutline() {
+  if (!handshakeOutlineCache) {
+    const pathEl = ensureHandshakePath();
+    const length = pathEl.getTotalLength();
+    const samples = 60;
+    handshakeOutlineCache = Array.from({ length: samples }, (_, i) => {
+      const pt = pathEl.getPointAtLength((i / samples) * length);
+      return [pt.x / HANDSHAKE_VIEWBOX.w, pt.y / HANDSHAKE_VIEWBOX.h];
+    });
+  }
+  return handshakeOutlineCache;
+}
 
 function generateBrain(count, width, height) {
   const cx = width * SHAPE_CENTER_X_RATIO;
   const cy = height * 0.5;
   const scale = Math.min(width, height) * 0.62;
   const boxW = scale;
-  const boxH = scale * 0.85;
+  const boxH = scale * (BRAIN_VIEWBOX.h / BRAIN_VIEWBOX.w);
   const originX = cx - boxW / 2;
   const originY = cy - boxH / 2;
   const rand = seededRandom(7);
 
-  function toPixel([nx, ny]) {
-    return [originX + nx * boxW, originY + ny * boxH];
-  }
-  const outlinePx = BRAIN_OUTLINE.map(toPixel);
-
-  // Шаг 1 — плотная заливка силуэта (rejection sampling + ray casting).
+  // Шаг 1 — плотная заливка силуэта обоих полушарий (rejection sampling + isPointInFill).
   function fillSilhouette(n) {
     const pts = [];
     let guard = 0;
     while (pts.length < n && guard < n * 40) {
       guard++;
-      const x = originX + rand() * boxW;
-      const y = originY + rand() * boxH;
-      if (isPointInPolygon(x, y, outlinePx)) pts.push({ x, y, emphasis: 0 });
-    }
-    return pts;
-  }
-
-  // Шаг 2 — извилины: частицы вдоль bezier-дуг внутри формы.
-  function gyriPoints(n) {
-    const arcs = 6;
-    const perArc = Math.ceil(n / arcs);
-    const pts = [];
-    for (let a = 0; a < arcs && pts.length < n; a++) {
-      const yLevel = 0.18 + (a / (arcs - 1)) * 0.55;
-      const p0 = toPixel([0.18, yLevel]);
-      const p1 = toPixel([0.4, yLevel - 0.06 + rand() * 0.05]);
-      const p2 = toPixel([0.65, yLevel + 0.06 - rand() * 0.05]);
-      const p3 = toPixel([0.85, yLevel]);
-      for (let s = 0; s < perArc && pts.length < n; s++) {
-        const t = s / perArc;
-        const mt = 1 - t;
-        const x =
-          mt * mt * mt * p0[0] + 3 * mt * mt * t * p1[0] + 3 * mt * t * t * p2[0] + t * t * t * p3[0];
-        const y =
-          mt * mt * mt * p0[1] + 3 * mt * mt * t * p1[1] + 3 * mt * t * t * p2[1] + t * t * t * p3[1];
-        if (isPointInPolygon(x, y, outlinePx)) pts.push({ x, y, emphasis: 0 });
+      const nx = rand();
+      const ny = rand();
+      if (isInsidePath(ensureBrainPath, nx * BRAIN_VIEWBOX.w, ny * BRAIN_VIEWBOX.h)) {
+        pts.push({ x: originX + nx * boxW, y: originY + ny * boxH, emphasis: 0 });
       }
     }
     return pts;
   }
 
-  // Шаг 3 — нейронные лучи: от границы формы наружу, с яркой конечной точкой.
+  // Шаг 1b — частицы прямо на контуре (getPointAtLength) для чёткого края силуэта.
+  function outlinePoints(n) {
+    const outline = getBrainOutline();
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const [nx, ny] = outline[i % outline.length];
+      pts.push({ x: originX + nx * boxW, y: originY + ny * boxH, emphasis: 0 });
+    }
+    return pts;
+  }
+
+  // Шаг 2 — нейронные лучи: от границы формы наружу, с яркой конечной точкой.
   function rayPoints(n) {
     const pts = [];
     const avgPerRay = 5;
@@ -199,67 +240,69 @@ function generateBrain(count, width, height) {
   }
 
   const rayCount = Math.round(count * 0.2);
-  const gyriCount = Math.round(count * 0.1);
-  const bodyCount = count - rayCount - gyriCount;
+  const outlineCount = Math.round(count * 0.16);
+  const bodyCount = count - rayCount - outlineCount;
 
-  const points = [...fillSilhouette(bodyCount), ...gyriPoints(gyriCount), ...rayPoints(rayCount)];
+  const points = [...fillSilhouette(bodyCount), ...outlinePoints(outlineCount), ...rayPoints(rayCount)];
   while (points.length < count) points.push({ ...points[points.length % Math.max(1, points.length)] });
   return points.slice(0, count);
 }
 
-// Нормализованные точки контура руки относительно центра формы (запястье сверху-слева,
-// пальцы тянутся к центру). Правая рука — зеркальное и перевёрнутое отражение левой,
-// руки встречаются в центре.
-const LEFT_HAND_POINTS = [
-  [-0.42, -0.28], [-0.35, -0.25], [-0.28, -0.22], [-0.38, -0.18],
-  [-0.25, -0.15], [-0.18, -0.1], [-0.12, -0.05],
-  [-0.2, -0.08], [-0.15, -0.02], [-0.1, 0.03],
-  [-0.22, -0.12], [-0.26, -0.06], [-0.24, 0.0],
-  [-0.08, -0.08], [-0.04, -0.02], [-0.02, 0.04],
-  [-0.05, -0.1], [0.0, -0.04], [0.02, 0.03], [0.03, 0.08],
-  [-0.02, -0.08], [0.02, -0.02], [0.04, 0.04],
-  [0.01, -0.06], [0.05, -0.01], [0.06, 0.04],
-];
-const RIGHT_HAND_POINTS = LEFT_HAND_POINTS.map(([x, y]) => [-x, -y]);
-
 function generateHandshake(count, width, height) {
   const cx = width * SHAPE_CENTER_X_RATIO;
   const cy = height * 0.5;
-  const scale = Math.min(width, height) * 1.15;
+  // Меньше масштаб, чем у силуэта-болванки раньше — на той же бюджетной численности
+  // частиц это даёт заметно выше плотность на единицу площади, иначе мелкие детали
+  // (пальцы, прорезь между ними) не читаются на фоне разреженного облака точек.
+  const scale = Math.min(width, height) * 0.58;
+  const boxW = scale;
+  const boxH = scale * (HANDSHAKE_VIEWBOX.h / HANDSHAKE_VIEWBOX.w);
+  const originX = cx - boxW / 2;
+  const originY = cy - boxH / 2;
   const rand = seededRandom(13);
 
-  function toPixel([nx, ny]) {
-    return [cx + nx * scale, cy + ny * scale];
-  }
-  const leftPoly = LEFT_HAND_POINTS.map(toPixel);
-  const rightPoly = RIGHT_HAND_POINTS.map(toPixel);
-
-  function bbox(poly) {
-    const xs = poly.map((p) => p[0]);
-    const ys = poly.map((p) => p[1]);
-    return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
-  }
-
-  function fillHand(n, poly) {
-    const box = bbox(poly);
+  // Шаг 1 — плотная заливка силуэта рук (rejection sampling + isPointInFill,
+  // корректно учитывает "дырку" между сомкнутыми пальцами).
+  function fillSilhouette(n) {
     const pts = [];
     let guard = 0;
     while (pts.length < n && guard < n * 40) {
       guard++;
-      const x = box.minX + rand() * (box.maxX - box.minX);
-      const y = box.minY + rand() * (box.maxY - box.minY);
-      if (isPointInPolygon(x, y, poly)) {
-        const dist = Math.hypot(x - cx, y - cy);
-        const energy = dist < scale * 0.05 ? 1 : 0;
-        pts.push({ x, y, emphasis: energy });
+      const nx = rand();
+      const ny = rand();
+      if (isInsidePath(ensureHandshakePath, nx * HANDSHAKE_VIEWBOX.w, ny * HANDSHAKE_VIEWBOX.h)) {
+        pts.push({ x: originX + nx * boxW, y: originY + ny * boxH });
       }
     }
     return pts;
   }
 
-  const halfCount = Math.floor(count / 2);
-  const points = [...fillHand(halfCount, leftPoly), ...fillHand(count - halfCount, rightPoly)];
+  // Шаг 1b — частицы прямо на контуре, для чёткого края рук.
+  function outlinePoints(n) {
+    const outline = getHandshakeOutline();
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const [nx, ny] = outline[i % outline.length];
+      pts.push({ x: originX + nx * boxW, y: originY + ny * boxH });
+    }
+    return pts;
+  }
+
+  const outlineCount = Math.round(count * 0.18);
+  const points = [...fillSilhouette(count - outlineCount), ...outlinePoints(outlineCount)];
   while (points.length < count) points.push({ ...points[points.length % Math.max(1, points.length)] });
+
+  // Зона соединения — центроид всей залитой формы (доминирует область сомкнутых
+  // рук, манжеты по краям меньше и почти не сдвигают центр масс).
+  const centroid = points
+    .reduce((acc, p) => [acc[0] + p.x, acc[1] + p.y], [0, 0])
+    .map((v) => v / points.length);
+  const energyRadius = boxW * 0.07;
+  points.forEach((p) => {
+    const dist = Math.hypot(p.x - centroid[0], p.y - centroid[1]);
+    p.emphasis = dist < energyRadius ? 1 : 0;
+  });
+
   return points.slice(0, count);
 }
 
