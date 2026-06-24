@@ -1,16 +1,13 @@
 .footer {
   position: relative;
-  /* см. комментарий в Stats.css — без z-index секция уходит под фиксированный
-     фон Hero и становится невидимой. */
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  padding: var(--spacing-36) var(--spacing-24);
-  gap: var(--spacing-18);
+  padding: 2.5rem 24px;
+  gap: 16px;
 }
 
 .footer::before {
@@ -20,7 +17,14 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(124, 58, 237, 0.6),
+    rgba(167, 139, 250, 0.8),
+    rgba(124, 58, 237, 0.6),
+    transparent
+  );
 }
 
 .footer__brand {
@@ -30,23 +34,23 @@
 }
 
 .footer__logo {
-  font-family: var(--font-main);
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-bone);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-accent-light);
+  text-shadow: 0 0 12px rgba(167, 139, 250, 0.6);
   white-space: nowrap;
 }
 
 .footer__slogan {
   font-size: 12px;
-  color: var(--color-smoke);
+  color: var(--color-text-muted);
   opacity: 0.75;
   white-space: nowrap;
 }
 
 .footer__links {
   display: flex;
-  gap: var(--spacing-24);
+  gap: 22px;
 }
 
 .footer__link {
@@ -54,12 +58,12 @@
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: var(--color-smoke);
+  color: var(--color-text-muted);
   transition: color 0.3s ease;
 }
 
 .footer__link:hover {
-  color: var(--color-bone);
+  color: var(--color-accent-light);
 }
 
 .footer__link-icon {
@@ -68,7 +72,7 @@
 
 .footer__copy {
   font-size: 12px;
-  color: var(--color-smoke);
+  color: var(--color-text-muted);
   opacity: 0.6;
   white-space: nowrap;
 }
@@ -77,7 +81,7 @@
   .footer {
     flex-direction: column;
     text-align: center;
-    gap: var(--spacing-18);
+    gap: 18px;
   }
 
   .footer__brand {
