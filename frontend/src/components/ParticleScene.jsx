@@ -195,17 +195,23 @@ const SHAPE_GENERATORS = [generateSphere, generateBrain, generateHandshake];
 const BG_RATIO = 0.25;
 
 function ParticleMorphSystem({ activeSection, count }) {
-  const meshRef = useRef(null);
+  const positionAttrRef = useRef(null);
+  const colorAttrRef = useRef(null);
   const groupRef = useRef(null);
   const pointer = useRef({ x: 0, y: 0, active: false });
   const cameraTarget = useRef({ x: 0, y: 0 });
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), []);
   const intersectPoint = useMemo(() => new THREE.Vector3(), []);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
 
   const bgCount = Math.floor(count * BG_RATIO);
   const fgCount = count - bgCount;
+
+  // Points (а не instancedMesh) — у используемой версии Three.js/R3F instanceColor
+  // на InstancedMesh рендерится чёрным независимо от заданных цветов (подтверждено
+  // изолированным репро); обычный per-vertex color-атрибут BufferGeometry работает корректно.
+  const positions = useMemo(() => new Float32Array(count * 3), [count]);
+  const colors = useMemo(() => new Float32Array(count * 3), [count]);
 
   const layouts = useMemo(() => SHAPE_GENERATORS.map((gen) => gen(fgCount)), [fgCount]);
   const bgLayout = useMemo(() => generateBackground(bgCount), [bgCount]);
@@ -299,8 +305,9 @@ function ParticleMorphSystem({ activeSection, count }) {
   }, []);
 
   useFrame((state, delta) => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
+    const positionAttr = positionAttrRef.current;
+    const colorAttr = colorAttrRef.current;
+    if (!positionAttr || !colorAttr) return;
 
     // Плавный параллакс камеры — следит за курсором с инерцией
     const targetCamX = pointer.current.active ? pointer.current.x * CAMERA_PARALLAX_X : 0;
@@ -346,24 +353,17 @@ function ParticleMorphSystem({ activeSection, count }) {
       p.repel.z += (repelZ - p.repel.z) * 0.15;
 
       const floatAmp = p.isBg ? 0.03 : 0.015;
-      dummy.position.set(
-        p.current.x + p.repel.x + Math.sin(t * p.speed + p.phase) * floatAmp,
-        p.current.y + p.repel.y + Math.cos(t * p.speed * 0.7 + p.phase) * floatAmp,
-        p.current.z + p.repel.z
-      );
-      dummy.rotation.set(
-        p.rotation.x + t * p.speed * 0.3,
-        p.rotation.y + t * p.speed * 0.5,
-        p.rotation.z
-      );
-      dummy.scale.setScalar(p.scale);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-      mesh.setColorAt(i, p.color);
+      positions[i * 3] = p.current.x + p.repel.x + Math.sin(t * p.speed + p.phase) * floatAmp;
+      positions[i * 3 + 1] = p.current.y + p.repel.y + Math.cos(t * p.speed * 0.7 + p.phase) * floatAmp;
+      positions[i * 3 + 2] = p.current.z + p.repel.z;
+
+      colors[i * 3] = p.color.r;
+      colors[i * 3 + 1] = p.color.g;
+      colors[i * 3 + 2] = p.color.b;
     }
 
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    positionAttr.needsUpdate = true;
+    colorAttr.needsUpdate = true;
 
     if (groupRef.current && activeSection === 1) {
       groupRef.current.rotation.y += delta * 0.12;
@@ -372,14 +372,25 @@ function ParticleMorphSystem({ activeSection, count }) {
 
   return (
     <group ref={groupRef}>
-      <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
-        <tetrahedronGeometry args={[0.045, 0]} />
-        <meshBasicMaterial
-          vertexColors
-          transparent
-          opacity={0.92}
-        />
-      </instancedMesh>
+      <points>
+        <bufferGeometry>
+          <bufferAttribute
+            ref={positionAttrRef}
+            attach="attributes-position"
+            count={count}
+            array={positions}
+            itemSize={3}
+          />
+          <bufferAttribute
+            ref={colorAttrRef}
+            attach="attributes-color"
+            count={count}
+            array={colors}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial vertexColors transparent opacity={0.95} size={0.12} sizeAttenuation />
+      </points>
     </group>
   );
 }
