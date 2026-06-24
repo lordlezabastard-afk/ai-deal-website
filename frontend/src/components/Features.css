@@ -12,30 +12,32 @@
 }
 
 .features__card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 28px 24px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  padding: var(--card-padding);
 }
 
 .features__icon {
   width: 36px;
   height: 36px;
-  color: var(--color-accent-light);
+  color: var(--color-plum-voltage);
   margin-bottom: 16px;
 }
 
 .features__title {
-  font-size: 17px;
+  font-family: var(--font-main);
+  font-size: var(--text-subheading);
   font-weight: 600;
   margin: 0 0 8px;
-  color: var(--color-text);
+  color: var(--color-bone);
 }
 
 .features__text {
   font-size: 14px;
-  line-height: 1.55;
-  color: var(--color-text-muted);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-ash);
   margin: 0;
 }
 

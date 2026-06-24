@@ -11,7 +11,8 @@
 .placeholder__title {
   position: relative;
   z-index: 1;
-  font-size: 22px;
-  font-weight: 500;
-  color: var(--color-text-muted);
+  font-family: var(--font-main);
+  font-size: var(--text-heading-sm);
+  font-weight: 400;
+  color: var(--color-smoke);
 }

@@ -1,53 +1,3 @@
-.hero-bg {
-  position: fixed;
-  inset: 0;
-  /* z-index:1, а не 0: должен рисоваться НАД собственным фоном каждой hero-section
-     (иначе слои погружения/затемнения не видны поверх статичной картинки секции),
-     но под Stats/Features/Footer ниже по странице (см. их z-index:1 + порядок в DOM). */
-  z-index: 1;
-  overflow: hidden;
-  /* НЕ ставить тут непрозрачный background: z-index:1 создаёт собственный stacking
-     context, и его фон рисовался бы НАД фоном hero-section везде, где дочерние слои
-     (mountain/particles) прозрачны — то есть полностью перекрывал бы секцию 1 (звёзды). */
-  background: transparent;
-}
-
-.hero-bg__layer {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  will-change: opacity, transform, filter;
-}
-
-/* Камера "ныряния" летит к озеру/отражению в нижней части кадра, а не к человеку
-   на скале в центре — поэтому точка масштабирования смещена вниз от середины. */
-.hero-bg__layer--mountain {
-  transform-origin: 50% 78%;
-}
-
-.hero-bg__overlay {
-  position: absolute;
-  inset: 0;
-  background: #000;
-  opacity: 0;
-  will-change: opacity;
-}
-
-.hero-bg__vignette {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.45) 0%,
-    rgba(0, 0, 0, 0.15) 35%,
-    rgba(0, 0, 0, 0.25) 65%,
-    rgba(0, 0, 0, 0.6) 100%
-  );
-  pointer-events: none;
-}
-
 .hero-scroll {
   position: relative;
 }
@@ -60,53 +10,7 @@
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
-  /* Базовый цвет секции — тёмно-синий (не чёрный), в тон ночному небу обеих картинок.
-     Виден только в узкой полосе у стыка, где hero-section__bg гаснет через mask-image. */
-  background: #11254e;
-}
-
-.hero-section__bg {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-}
-
-/* Сглаживание стыка секция 1 → секция 2: т.к. секции идут в обычном потоке без
-   перекрытия, фон каждой секции гаснет не в чёрноту, а в общий синий тон ночного
-   неба (между #0a1530 и #1a3a6e), близкий к цвету низа звёзд и верха гор. */
-.hero-section__bg--fade-bottom {
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 75%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 0%, #000 75%, transparent 100%);
-}
-
-.hero-section__bg--fade-bottom::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 45%,
-    rgba(16, 32, 72, 0.55) 75%,
-    rgba(16, 32, 72, 0.92) 100%
-  );
-}
-
-.hero-section__bg--fade-top {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 100%);
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 100%);
-}
-
-.hero-section__bg--fade-top::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(16, 32, 72, 0.92) 0%,
-    rgba(16, 32, 72, 0.55) 25%,
-    transparent 55%
-  );
+  background: #000000;
 }
 
 .hero__content {
@@ -126,25 +30,33 @@
 
 .hero__badge {
   display: inline-block;
-  font-size: 13px;
+  font-family: var(--font-main);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   padding: 6px 14px;
-  border: 1px solid;
-  border-radius: var(--radius-lg);
+  border: 1px solid rgba(128, 82, 255, 0.3);
+  border-radius: var(--radius);
+  background: transparent;
   margin-bottom: 18px;
 }
 
 .hero__title {
-  font-size: 40px;
-  line-height: 1.2;
-  font-weight: 700;
+  font-size: var(--text-display);
+  line-height: 0.9;
+  font-weight: 200;
+  letter-spacing: -0.04em;
   margin: 0 0 16px;
-  color: var(--color-text);
+  color: var(--color-bone);
 }
 
 .hero__subtitle {
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--color-text-muted);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.025em;
+  color: var(--color-ash);
   margin: 0 0 28px;
 }
 
@@ -154,33 +66,27 @@
   gap: 14px;
 }
 
-.hero__btn-primary {
-  padding: 12px 24px;
-  font-size: 15px;
-}
-
 .hero__cta {
   margin-top: 18px;
 }
 
 .hero__cta-btn {
-  background: transparent;
-  border: 2px solid #ffffff;
+  background: var(--color-plum-voltage);
+  border: none;
   color: #ffffff;
-  border-radius: 8px;
-  padding: 14px 36px;
-  font-size: 19px;
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  font-family: var(--font-main);
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .hero__cta-btn:hover {
-  background: #ffffff;
-  color: #000000;
-  transform: scale(1.05);
-  box-shadow: 0 0 24px rgba(255, 255, 255, 0.45);
+  opacity: 0.85;
+  transform: scale(1.03);
 }
 
 .hero__dots {
@@ -216,7 +122,7 @@
 
 @media (max-width: 768px) {
   .hero__title {
-    font-size: 30px;
+    font-size: var(--text-heading-lg);
   }
 
   .hero__subtitle {
@@ -228,16 +134,11 @@
     align-items: center;
     gap: 10px;
   }
-
-  .hero__cta-btn {
-    padding: 12px 28px;
-    font-size: 17px;
-  }
 }
 
 @media (max-width: 480px) {
   .hero__title {
-    font-size: 24px;
+    font-size: var(--text-heading);
   }
 
   .hero__content {

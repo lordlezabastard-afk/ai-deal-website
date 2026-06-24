@@ -2,9 +2,9 @@ import { useEffect, useRef } from "react";
 import "./AnimatedBackground.css";
 
 export const ACCENT_COLORS = {
-  purple: [167, 139, 250],
-  green: [52, 211, 153],
-  orange: [251, 191, 36],
+  purple: [128, 82, 255],
+  green: [128, 82, 255],
+  orange: [128, 82, 255],
 };
 
 function lerpColor(a, b, t) {

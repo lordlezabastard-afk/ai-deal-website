@@ -29,12 +29,12 @@ function Navbar({ sidebarOpen, onBurgerClick }) {
           <div className="navbar__right">
             <button
               type="button"
-              className="btn navbar__auth-btn navbar__login beam-btn"
+              className="navbar__login"
               onClick={openLoginModal}
             >
               Войти
             </button>
-            <button type="button" className="btn navbar__auth-btn beam-btn" onClick={openRegisterModal}>
+            <button type="button" className="btn navbar__register beam-btn" onClick={openRegisterModal}>
               Регистрация
             </button>
           </div>

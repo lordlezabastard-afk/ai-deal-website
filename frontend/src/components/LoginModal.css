@@ -24,20 +24,11 @@
   width: 420px;
   max-width: 90vw;
   padding: 36px 32px;
-  background: rgba(13, 13, 20, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(167, 139, 250, 0.25);
-  box-shadow: 0 0 40px rgba(124, 58, 237, 0.35);
-  clip-path: polygon(
-    18px 0,
-    calc(100% - 18px) 0,
-    100% 18px,
-    100% calc(100% - 18px),
-    calc(100% - 18px) 100%,
-    18px 100%,
-    0 calc(100% - 18px),
-    0 18px
-  );
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius);
   animation: login-modal-scale-in 0.25s ease forwards;
 }
 
@@ -71,9 +62,10 @@
 
 .login-modal__title {
   margin: 0 0 20px;
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--color-text);
+  font-family: var(--font-main);
+  font-size: var(--text-heading);
+  font-weight: 200;
+  color: var(--color-bone);
   text-align: center;
 }
 
@@ -95,18 +87,22 @@
 }
 
 .login-modal__field input {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius);
+  padding: 10px 16px;
   font-size: 15px;
-  color: var(--color-text);
+  color: var(--color-bone);
   outline: none;
   transition: border-color 0.2s ease;
 }
 
+.login-modal__field input::placeholder {
+  color: var(--color-smoke);
+}
+
 .login-modal__field input:focus {
-  border-color: var(--color-accent-light);
+  border-color: var(--color-plum-voltage);
 }
 
 .login-modal__password-wrap {
@@ -142,23 +138,23 @@
 
 .login-modal__submit-btn {
   margin-top: 8px;
-  background: transparent;
-  border: 2px solid #ffffff;
+  background: var(--color-plum-voltage);
+  border: none;
   color: #ffffff;
-  border-radius: var(--radius-sm);
-  padding: 12px 0;
-  font-size: 16px;
+  border-radius: var(--radius);
+  padding: 14px 0;
+  font-family: var(--font-main);
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .login-modal__submit-btn:hover:not(:disabled) {
-  background: #ffffff;
-  color: #000000;
-  box-shadow: 0 0 24px rgba(255, 255, 255, 0.45);
+  opacity: 0.85;
+  transform: scale(1.02);
 }
 
 .login-modal__submit-btn:disabled {
@@ -177,7 +173,7 @@
   background: transparent;
   border: none;
   padding: 0;
-  color: var(--color-accent-light);
+  color: var(--color-plum-voltage);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
