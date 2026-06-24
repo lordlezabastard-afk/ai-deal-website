@@ -5,11 +5,13 @@ import * as THREE from "three";
 const PARTICLE_COUNT_DESKTOP = 8000;
 const PARTICLE_COUNT_MOBILE = 3000;
 const MORPH_LERP = 0.8;
-const REPEL_RADIUS = 0.8;
-const REPEL_STRENGTH = 0.15;
+const REPEL_RADIUS = 2.5;      // было 0.8 — теперь охватывает большую зону
+const REPEL_STRENGTH = 0.35;   // было 0.15 — сильнее толкает
 
-// Детерминированный псевдослучайный генератор по индексу — чтобы цвет/фаза/скорость
-// частицы были стабильны между ререндерами, а не дёргались на каждый кадр.
+// Параллакс камеры — насколько курсор смещает камеру
+const CAMERA_PARALLAX_X = 0.6;
+const CAMERA_PARALLAX_Y = 0.35;
+
 function seededRandom(seed) {
   let s = seed;
   return function next() {
@@ -27,25 +29,45 @@ function pickWeighted(rand, items) {
   return items[items.length - 1];
 }
 
+// Расширенные палитры — больше цветов, больше контраста
+// Все 4 цвета присутствуют с заметным весом — фиолетовый, оранжевый, зелёный, белый
 const SECTION_COLORS = [
   [
-    { color: "#8052ff", weight: 0.7 },
-    { color: "#ffffff", weight: 0.2 },
-    { color: "#bdbdbd", weight: 0.1 },
+    { color: "#8052ff", weight: 0.28 },  // фиолетовый
+    { color: "#ffb829", weight: 0.25 },  // оранжевый
+    { color: "#ffffff", weight: 0.25 },  // белый
+    { color: "#15846e", weight: 0.22 },  // зелёный
   ],
   [
-    { color: "#8052ff", weight: 0.6 },
-    { color: "#ffffff", weight: 0.25 },
-    { color: "#6040cc", weight: 0.15 },
+    { color: "#8052ff", weight: 0.25 },
+    { color: "#ffffff", weight: 0.28 },
+    { color: "#ffb829", weight: 0.22 },
+    { color: "#15846e", weight: 0.25 },
   ],
   [
-    { color: "#8052ff", weight: 0.65 },
-    { color: "#15846e", weight: 0.2 },
-    { color: "#ffffff", weight: 0.15 },
+    { color: "#15846e", weight: 0.28 },
+    { color: "#8052ff", weight: 0.25 },
+    { color: "#ffb829", weight: 0.25 },
+    { color: "#ffffff", weight: 0.22 },
   ],
 ];
 
-// Форма 0 — сфера (fibonacci sphere), смещена в правую половину секции.
+// Фоновые частицы — рассеяны по всему viewport
+function generateBackground(count) {
+  const rand = seededRandom(99);
+  const positions = [];
+  for (let i = 0; i < count; i++) {
+    positions.push(
+      new THREE.Vector3(
+        (rand() - 0.5) * 14,
+        (rand() - 0.5) * 9,
+        -2 - rand() * 3
+      )
+    );
+  }
+  return positions;
+}
+
 function generateSphere(count) {
   const positions = [];
   const cx = 1.5;
@@ -65,8 +87,6 @@ function generateSphere(count) {
   return positions;
 }
 
-// Форма 1 — анатомический 3D мозг: деформированный эллипсоид (извилины) с
-// продольной щелью между полушариями + нейронные лучи, уходящие наружу по нормали.
 function generateBrain(count) {
   const positions = [];
   const rand = seededRandom(7);
@@ -80,20 +100,16 @@ function generateBrain(count) {
     guard++;
     const u = rand() * Math.PI * 2;
     const v = Math.acos(2 * rand() - 1);
-
     let x = 1.4 * Math.sin(v) * Math.cos(u);
     let y = 1.0 * Math.cos(v);
     let z = 0.9 * Math.sin(v) * Math.sin(u);
-
     const gyrusFreq = 4;
     const gyrusAmp = 0.12;
     x += gyrusAmp * Math.sin(u * gyrusFreq) * Math.cos(v * 2);
     y += gyrusAmp * Math.cos(u * gyrusFreq * 0.7) * Math.sin(v * 3);
     z += gyrusAmp * Math.sin(u * gyrusFreq * 1.3 + 1) * Math.cos(v * 2.5);
-
     if (y < -0.75) continue;
     if (Math.abs(z) < 0.08 && y > -0.2) continue;
-
     positions.push(new THREE.Vector3(cx + x, cy + y, z));
   }
 
@@ -102,19 +118,15 @@ function generateBrain(count) {
     guard++;
     const u = rand() * Math.PI * 2;
     const v = Math.acos(2 * rand() - 1);
-
     const surfaceR = 1.0 + rand() * 0.15;
     const nx = surfaceR * 1.4 * Math.sin(v) * Math.cos(u);
     const ny = surfaceR * 1.0 * Math.cos(v);
     const nz = surfaceR * 0.9 * Math.sin(v) * Math.sin(u);
-
     if (ny < -0.75) continue;
-
     const rayLength = 0.3 + rand() * 0.8;
     const rayX = nx + Math.sin(v) * Math.cos(u) * rayLength;
     const rayY = ny + Math.cos(v) * rayLength;
     const rayZ = nz + Math.sin(v) * Math.sin(u) * rayLength;
-
     positions.push(new THREE.Vector3(cx + rayX, cy + rayY, rayZ));
   }
 
@@ -124,8 +136,6 @@ function generateBrain(count) {
   return positions.slice(0, count);
 }
 
-// Форма 2 — рукопожатие: две руки (предплечье → ладонь → пальцы) идущие
-// диагонально друг к другу, со светящейся зоной соединения в центре.
 function generateHandshake(count) {
   const positions = [];
   const rand = seededRandom(13);
@@ -134,7 +144,6 @@ function generateHandshake(count) {
 
   function generateHand(sign, n) {
     const pts = [];
-
     const forearmCount = Math.round(n * 0.25);
     for (let i = 0; i < forearmCount; i++) {
       const t = i / forearmCount;
@@ -145,7 +154,6 @@ function generateHandshake(count) {
       const r = 0.12 + rand() * 0.08;
       pts.push(new THREE.Vector3(x + Math.cos(angle) * r, y + Math.sin(angle) * r * 0.7, z));
     }
-
     const palmCount = Math.round(n * 0.35);
     for (let i = 0; i < palmCount; i++) {
       const t = i / palmCount;
@@ -153,15 +161,8 @@ function generateHandshake(count) {
       const y = sign * (-0.3 + t * 0.15);
       const angle = rand() * Math.PI * 2;
       const r = 0.18 + rand() * 0.12;
-      pts.push(
-        new THREE.Vector3(
-          x + Math.cos(angle) * r * 0.9,
-          y + Math.sin(angle) * r,
-          (rand() - 0.5) * 0.3
-        )
-      );
+      pts.push(new THREE.Vector3(x + Math.cos(angle) * r * 0.9, y + Math.sin(angle) * r, (rand() - 0.5) * 0.3));
     }
-
     const fingerOffsets = [-0.22, -0.07, 0.08, 0.22];
     const fingerLengths = [0.45, 0.52, 0.5, 0.4];
     fingerOffsets.forEach((offset, fi) => {
@@ -170,32 +171,16 @@ function generateHandshake(count) {
         const t = i / fCount;
         const angle = rand() * Math.PI * 2;
         const r = 0.055;
-        pts.push(
-          new THREE.Vector3(
-            sign * (0.2 - t * fingerLengths[fi]),
-            offset + (rand() - 0.5) * 0.04,
-            (rand() - 0.5) * 0.15 + Math.cos(angle) * r
-          )
-        );
+        pts.push(new THREE.Vector3(sign * (0.2 - t * fingerLengths[fi]), offset + (rand() - 0.5) * 0.04, (rand() - 0.5) * 0.15 + Math.cos(angle) * r));
       }
     });
-
     return pts;
   }
 
   generateHand(1, half).forEach((p) => positions.push(p.add(new THREE.Vector3(cx, 0, 0))));
-  generateHand(-1, count - 120 - half).forEach((p) =>
-    positions.push(p.add(new THREE.Vector3(cx, 0, 0)))
-  );
-
+  generateHand(-1, count - 120 - half).forEach((p) => positions.push(p.add(new THREE.Vector3(cx, 0, 0))));
   for (let i = 0; i < 120; i++) {
-    positions.push(
-      new THREE.Vector3(
-        cx + (rand() - 0.5) * 0.3,
-        (rand() - 0.5) * 0.2,
-        (rand() - 0.5) * 0.25
-      )
-    );
+    positions.push(new THREE.Vector3(cx + (rand() - 0.5) * 0.3, (rand() - 0.5) * 0.2, (rand() - 0.5) * 0.25));
   }
 
   while (positions.length < count) {
@@ -206,21 +191,45 @@ function generateHandshake(count) {
 
 const SHAPE_GENERATORS = [generateSphere, generateBrain, generateHandshake];
 
+// Процент частиц отведённых под фон (рассеяны по всему экрану)
+const BG_RATIO = 0.25;
+
 function ParticleMorphSystem({ activeSection, count }) {
   const meshRef = useRef(null);
   const groupRef = useRef(null);
   const pointer = useRef({ x: 0, y: 0, active: false });
+  const cameraTarget = useRef({ x: 0, y: 0 });
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), []);
   const intersectPoint = useMemo(() => new THREE.Vector3(), []);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  const layouts = useMemo(() => SHAPE_GENERATORS.map((gen) => gen(count)), [count]);
+  const bgCount = Math.floor(count * BG_RATIO);
+  const fgCount = count - bgCount;
+
+  const layouts = useMemo(() => SHAPE_GENERATORS.map((gen) => gen(fgCount)), [fgCount]);
+  const bgLayout = useMemo(() => generateBackground(bgCount), [bgCount]);
 
   const particles = useMemo(() => {
     const rand = seededRandom(42);
-    return Array.from({ length: count }, () => ({
-      current: layouts[0][0] ? layouts[0][Math.floor(rand() * layouts[0].length)].clone() : new THREE.Vector3(),
+    // Фоновые частицы
+    const bg = Array.from({ length: bgCount }, (_, i) => ({
+      isBg: true,
+      current: bgLayout[i].clone(),
+      target: bgLayout[i].clone(),
+      from: new THREE.Color(),
+      to: new THREE.Color(),
+      color: new THREE.Color(),
+      rotation: new THREE.Euler(rand() * Math.PI * 2, rand() * Math.PI * 2, rand() * Math.PI * 2),
+      speed: 0.1 + rand() * 0.3,
+      phase: rand() * Math.PI * 2,
+      scale: 0.3 + rand() * 0.5,
+      repel: new THREE.Vector3(),
+    }));
+    // Основные (морфинг) частицы
+    const fg = Array.from({ length: fgCount }, (_, i) => ({
+      isBg: false,
+      current: layouts[0][i] ? layouts[0][i].clone() : new THREE.Vector3(),
       target: new THREE.Vector3(),
       from: new THREE.Color(),
       to: new THREE.Color(),
@@ -231,19 +240,24 @@ function ParticleMorphSystem({ activeSection, count }) {
       scale: 0.6 + rand() * 0.8,
       repel: new THREE.Vector3(),
     }));
-  }, [count, layouts]);
+    return [...bg, ...fg];
+  }, [bgCount, fgCount, layouts, bgLayout]);
 
-  // Реальное начальное положение — точки сферы (форма 0), а не случайные точки из layouts[0].
   useEffect(() => {
     const rand = seededRandom(42);
-    particles.forEach((p, i) => {
+    // Инициализация цветов фоновых частиц
+    particles.slice(0, bgCount).forEach((p) => {
+      const allColors = SECTION_COLORS[0];
+      const c = pickWeighted(rand(), allColors).color;
+      p.from.set(c); p.to.set(c); p.color.set(c);
+    });
+    // Инициализация цветов основных частиц
+    particles.slice(bgCount).forEach((p, i) => {
       const start = layouts[0][i] || new THREE.Vector3();
       p.current.copy(start);
       p.target.copy(start);
       const c = pickWeighted(rand(), SECTION_COLORS[0]).color;
-      p.from.set(c);
-      p.to.set(c);
-      p.color.set(c);
+      p.from.set(c); p.to.set(c); p.color.set(c);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -252,13 +266,20 @@ function ParticleMorphSystem({ activeSection, count }) {
     const targetLayout = layouts[activeSection];
     const palette = SECTION_COLORS[activeSection];
     const rand = seededRandom(100 + activeSection);
-    particles.forEach((p, i) => {
+    // Смена цветов фоновых частиц при смене секции
+    particles.slice(0, bgCount).forEach((p) => {
+      p.from.copy(p.color);
+      const c = pickWeighted(rand(), palette).color;
+      p.to.set(c);
+    });
+    // Морфинг основных частиц
+    particles.slice(bgCount).forEach((p, i) => {
       p.from.copy(p.color);
       p.target.copy(targetLayout[i]);
       const c = pickWeighted(rand(), palette).color;
       p.to.set(c);
     });
-  }, [activeSection, layouts, particles]);
+  }, [activeSection, layouts, particles, bgCount]);
 
   useEffect(() => {
     function onMouseMove(e) {
@@ -281,6 +302,15 @@ function ParticleMorphSystem({ activeSection, count }) {
     const mesh = meshRef.current;
     if (!mesh) return;
 
+    // Плавный параллакс камеры — следит за курсором с инерцией
+    const targetCamX = pointer.current.active ? pointer.current.x * CAMERA_PARALLAX_X : 0;
+    const targetCamY = pointer.current.active ? pointer.current.y * CAMERA_PARALLAX_Y : 0;
+    cameraTarget.current.x += (targetCamX - cameraTarget.current.x) * 0.04;
+    cameraTarget.current.y += (targetCamY - cameraTarget.current.y) * 0.04;
+    state.camera.position.x = cameraTarget.current.x;
+    state.camera.position.y = cameraTarget.current.y;
+    state.camera.lookAt(cameraTarget.current.x * 0.3, cameraTarget.current.y * 0.3, 0);
+
     if (pointer.current.active) {
       raycaster.setFromCamera({ x: pointer.current.x, y: pointer.current.y }, state.camera);
       raycaster.ray.intersectPlane(plane, intersectPoint);
@@ -292,12 +322,13 @@ function ParticleMorphSystem({ activeSection, count }) {
 
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i];
-      p.current.lerp(p.target, lerpT);
+
+      if (!p.isBg) {
+        p.current.lerp(p.target, lerpT);
+      }
       p.color.lerp(p.to, colorLerpT);
 
-      let repelX = 0;
-      let repelY = 0;
-      let repelZ = 0;
+      let repelX = 0, repelY = 0, repelZ = 0;
       if (pointer.current.active) {
         const dx = p.current.x - intersectPoint.x;
         const dy = p.current.y - intersectPoint.y;
@@ -314,18 +345,17 @@ function ParticleMorphSystem({ activeSection, count }) {
       p.repel.y += (repelY - p.repel.y) * 0.15;
       p.repel.z += (repelZ - p.repel.z) * 0.15;
 
+      const floatAmp = p.isBg ? 0.03 : 0.015;
       dummy.position.set(
-        p.current.x + p.repel.x + Math.sin(t * p.speed + p.phase) * 0.015,
-        p.current.y + p.repel.y + Math.cos(t * p.speed * 0.7 + p.phase) * 0.015,
+        p.current.x + p.repel.x + Math.sin(t * p.speed + p.phase) * floatAmp,
+        p.current.y + p.repel.y + Math.cos(t * p.speed * 0.7 + p.phase) * floatAmp,
         p.current.z + p.repel.z
       );
-
       dummy.rotation.set(
         p.rotation.x + t * p.speed * 0.3,
         p.rotation.y + t * p.speed * 0.5,
         p.rotation.z
       );
-
       dummy.scale.setScalar(p.scale);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
@@ -343,13 +373,11 @@ function ParticleMorphSystem({ activeSection, count }) {
   return (
     <group ref={groupRef}>
       <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
-        <tetrahedronGeometry args={[0.025, 0]} />
-        <meshStandardMaterial
-          color="#8052ff"
-          emissive="#8052ff"
-          emissiveIntensity={0.4}
+        <tetrahedronGeometry args={[0.045, 0]} />
+        <meshBasicMaterial
+          vertexColors
           transparent
-          opacity={0.85}
+          opacity={0.92}
         />
       </instancedMesh>
     </group>
@@ -370,9 +398,7 @@ export default function ParticleScene({ activeSection }) {
       gl={{ antialias: true, alpha: true }}
       dpr={Math.min(window.devicePixelRatio, 2)}
     >
-      <ambientLight intensity={0.15} />
-      <pointLight position={[2, 3, 4]} intensity={1.2} color="#8052ff" />
-      <pointLight position={[-3, -2, 2]} intensity={0.6} color="#ffffff" />
+      <ambientLight intensity={1} />
       <ParticleMorphSystem activeSection={activeSection} count={count} />
     </Canvas>
   );

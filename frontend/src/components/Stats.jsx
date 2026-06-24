@@ -1,71 +1,62 @@
 import { useEffect, useRef, useState } from "react";
 import "./Stats.css";
 
-const STATS = [
-  { id: "users", target: 10000, suffix: "+", label: "Участников" },
-  { id: "courses", target: 50, suffix: "+", label: "AI-курсов" },
-  { id: "levels", staticValue: "3 уровня", label: "Партнёрки" },
-];
-
-function easeOutQuad(t) {
-  return 1 - (1 - t) * (1 - t);
-}
-
-function Stats() {
-  const sectionRef = useRef(null);
-  const hasAnimatedRef = useRef(false);
-  const [counts, setCounts] = useState({ users: 0, courses: 0 });
-  const [done, setDone] = useState(false);
+function useCountUp(target, duration = 2000, suffix = "") {
+  const [value, setValue] = useState("0" + suffix);
+  const ref = useRef(null);
+  const triggered = useRef(false);
 
   useEffect(() => {
-    const el = sectionRef.current;
-
+    const el = ref.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (!entry.isIntersecting || hasAnimatedRef.current) return;
-        hasAnimatedRef.current = true;
-        observer.disconnect();
-
-        const duration = 1800;
-        const start = performance.now();
-
-        function tick(now) {
-          const t = Math.min((now - start) / duration, 1);
-          const eased = easeOutQuad(t);
-          setCounts({
-            users: Math.round(eased * 10000),
-            courses: Math.round(eased * 50),
-          });
-          if (t < 1) {
-            requestAnimationFrame(tick);
-          } else {
-            setDone(true);
-          }
+        if (entry.isIntersecting && !triggered.current) {
+          triggered.current = true;
+          const start = performance.now();
+          const step = (now) => {
+            const p = Math.min((now - start) / duration, 1);
+            const ease = 1 - Math.pow(1 - p, 3);
+            const val = Math.round(ease * target);
+            setValue((val >= 1000 ? val.toLocaleString("ru") : String(val)) + suffix);
+            if (p < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
         }
-
-        requestAnimationFrame(tick);
       },
-      { threshold: 0.4 }
+      { threshold: 0.3 }
     );
-
-    if (el) observer.observe(el);
+    observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [target, duration, suffix]);
+
+  return [value, ref];
+}
+
+const STATS = [
+  { target: 10000, suffix: "+", duration: 2000, label: "участников платформы" },
+  { target: 50, suffix: "", duration: 1500, label: "курсов по AI" },
+  { target: 3, suffix: "", duration: 1000, label: "уровня партнёрки" },
+];
+
+export default function Stats() {
+  const counters = [
+    useCountUp(STATS[0].target, STATS[0].duration, STATS[0].suffix),
+    useCountUp(STATS[1].target, STATS[1].duration, STATS[1].suffix),
+    useCountUp(STATS[2].target, STATS[2].duration, STATS[2].suffix),
+  ];
 
   return (
-    <section className="stats" ref={sectionRef}>
-      {STATS.map((stat, i) => (
-        <div key={stat.id} className={`stats__item ${i > 0 ? "stats__item--divided" : ""}`}>
-          <span className="stats__value">
-            {stat.staticValue
-              ? stat.staticValue
-              : `${counts[stat.id].toLocaleString("ru-RU")}${done ? stat.suffix : ""}`}
-          </span>
-          <span className="stats__label">{stat.label}</span>
-        </div>
-      ))}
+    <section className="stats">
+      {STATS.map(({ label }, i) => {
+        const [val, ref] = counters[i];
+        return (
+          <div key={label} className="stat" ref={ref}>
+            <span className="stat__number">{val}</span>
+            <span className="stat__label">{label}</span>
+          </div>
+        );
+      })}
     </section>
   );
 }
-
-export default Stats;

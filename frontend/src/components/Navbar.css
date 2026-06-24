@@ -61,36 +61,39 @@
   }
 }
 
-.btn {
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 9px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-  white-space: nowrap;
-}
-
-.btn--primary {
-  background: var(--color-accent);
-}
-
-.btn--ghost {
+.navbar__btn-login {
   background: transparent;
-  border: 1px solid var(--color-border);
+  color: #918ea0;
+  border: 0.5px solid rgba(145, 142, 160, 0.3);
+  border-radius: 5px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: var(--font-sans);
 }
 
-.navbar__auth-btn {
-  background: transparent;
-  border: 2px solid #ffffff;
+.navbar__btn-login:hover {
+  color: #f4f0ff;
+  border-color: rgba(244, 240, 255, 0.4);
+}
+
+.navbar__btn-register {
+  background: #5046e4;
   color: #ffffff;
-  transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  border-radius: 5px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: var(--font-sans);
 }
 
-.navbar__auth-btn:hover {
-  background: #ffffff;
-  color: #000000;
-  box-shadow: 0 0 24px rgba(255, 255, 255, 0.45);
+.navbar__btn-register:hover {
+  background: #6357f0;
 }
 
 @media (max-width: 480px) {

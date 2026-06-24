@@ -1,7 +1,6 @@
 @import "./styles/beam-button.css";
 
 :root {
-  --color-bg: #0a0a12;
   --color-bg-card: #10101c;
   --color-accent: #7c3aed;
   --color-accent-light: #a78bfa;
@@ -17,6 +16,16 @@
   --radius-lg: 12px;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
+
+  /* Reflect-style additions */
+  --color-void-canvas: #030014; /* новый фон — не чёрный а indigo-black */
+  --color-lavender-accent: #9382ff; /* мягче чем plum-voltage для gradient */
+  --color-cosmic-grad: linear-gradient(90deg, #e59cff 0%, #ba9cff 50%, #9cb2ff 100%);
+  --color-iris: #5046e4; /* filled button background */
+  --color-ash-reflect: #918ea0; /* muted text */
+  --color-steel: #54525f; /* deepest muted */
+
+  --color-bg: var(--color-void-canvas);
 }
 
 * {

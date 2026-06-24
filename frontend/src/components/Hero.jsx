@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuthModal } from "../context/AuthModalContext";
 import { useAuth } from "../context/AuthContext";
-import foneStars from "../assets/fone-stars.avif";
-import foneMountain from "../assets/fone-mountain.avif";
-import foneParticles from "../assets/fone-particles.avif";
+import ParticleScene from "./ParticleScene";
 import "./Hero.css";
 
 const SECTIONS = [
@@ -18,7 +16,6 @@ const SECTIONS = [
     ],
     subtitle:
       "Платформа для обучения AI-технологиям, автоматизации бизнеса и построения партнёрской сети с пожизненным доходом",
-    accent: "#a78bfa",
     primaryBtn: null,
     secondaryBtn: { label: "Узнать больше" },
   },
@@ -35,8 +32,7 @@ const SECTIONS = [
     ],
     subtitle:
       "Мощный набор средств для вашего бизнеса. Поможет внедрить нейросети и облачные сервисы. Автоматизирует задачи, улучшит процессы и увеличит производительность. Всё готово к использованию",
-    accent: "#34d399",
-    primaryBtn: { label: "Смотреть курсы", bg: "#059669" },
+    primaryBtn: { label: "Смотреть курсы" },
     secondaryBtn: { label: "Как это работает" },
   },
   {
@@ -49,8 +45,7 @@ const SECTIONS = [
     ],
     subtitle:
       "Приглашай партнёров и зарабатывай с трёх уровней структуры. Чем больше команда — тем выше доход.",
-    accent: "#fbbf24",
-    primaryBtn: { label: "Начать зарабатывать", bg: "#b45309" },
+    primaryBtn: { label: "Начать зарабатывать" },
     secondaryBtn: { label: "Условия партнёрки" },
   },
 ];
@@ -79,28 +74,14 @@ const ICONS = {
   ),
 };
 
-function clamp01(x) {
-  return Math.min(1, Math.max(0, x));
-}
-
-function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
 function Hero() {
   const sectionRefs = useRef([]);
+  const titleRefs = useRef([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isInHero, setIsInHero] = useState(true);
 
-  const starsLayerRef = useRef(null);
-  const mountainLayerRef = useRef(null);
-  const overlayRef = useRef(null);
-  const particlesLayerRef = useRef(null);
-
   // Следим за скроллом страницы (единый document-скролл, без вложенного scroll-контейнера):
-  // какая Hero-секция активна (для индикатора-точек), и считаем прогресс перехода между
-  // фоновыми картинками 3 секций — звёзды → горы (обычный fade) и горы → частицы
-  // (кинематографичное "погружение": zoom-in + затемнение + блюр + cross-fade).
+  // какая Hero-секция активна — для индикатора-точек и для морфинга частиц (activeSection).
   useEffect(() => {
     let ticking = false;
 
@@ -115,39 +96,6 @@ function Hero() {
 
       const lastSectionTop = sectionRefs.current[SECTIONS.length - 1]?.offsetTop ?? Infinity;
       document.documentElement.classList.toggle("hero-snap-active", scrollTop < lastSectionTop - 2);
-
-      // rawProgress: 0 = верх секции 1 (звёзды), 1 = верх секции 2 (горы), 2 = верх секции 3 (частицы)
-      const rawProgress = Math.min(Math.max(raw, 0), SECTIONS.length - 1);
-      const e0 = easeInOutCubic(clamp01(rawProgress)); // переход 1→2: звёзды → горы
-      const e1 = easeInOutCubic(clamp01(rawProgress - 1)); // переход 2→3: погружение в горы → частицы
-
-      const starsOpacity = 1 - e0;
-      const mountainFadeIn = e0;
-      const mountainScale = 1 + 0.45 * e1;
-      const mountainDarken = 0.3 + 0.55 * e1;
-      const mountainBlur = clamp01((e1 - 0.5) * 2) * 4;
-      const mountainFadeOut = 1 - clamp01((e1 - 0.7) / 0.3);
-      const mountainOpacity = mountainFadeIn * mountainFadeOut;
-      const particlesOpacity = clamp01((e1 - 0.55) / 0.45);
-      const particlesScale = 1.08 - 0.08 * particlesOpacity;
-      const particlesBrightness = 0.7 + 0.3 * particlesOpacity;
-
-      if (starsLayerRef.current) {
-        starsLayerRef.current.style.opacity = String(starsOpacity);
-      }
-      if (mountainLayerRef.current) {
-        mountainLayerRef.current.style.opacity = String(mountainOpacity);
-        mountainLayerRef.current.style.transform = `scale(${mountainScale})`;
-        mountainLayerRef.current.style.filter = `blur(${mountainBlur}px)`;
-      }
-      if (overlayRef.current) {
-        overlayRef.current.style.opacity = String(mountainDarken * mountainOpacity);
-      }
-      if (particlesLayerRef.current) {
-        particlesLayerRef.current.style.opacity = String(particlesOpacity);
-        particlesLayerRef.current.style.transform = `scale(${particlesScale})`;
-        particlesLayerRef.current.style.filter = `brightness(${particlesBrightness})`;
-      }
 
       ticking = false;
     }
@@ -178,25 +126,7 @@ function Hero() {
 
   return (
     <>
-      <div className="hero-bg">
-        <div
-          ref={starsLayerRef}
-          className="hero-bg__layer"
-          style={{ backgroundImage: `url(${foneStars})`, opacity: 1 }}
-        />
-        <div
-          ref={mountainLayerRef}
-          className="hero-bg__layer"
-          style={{ backgroundImage: `url(${foneMountain})` }}
-        />
-        <div ref={overlayRef} className="hero-bg__overlay" />
-        <div
-          ref={particlesLayerRef}
-          className="hero-bg__layer"
-          style={{ backgroundImage: `url(${foneParticles})` }}
-        />
-        <div className="hero-bg__vignette" />
-      </div>
+      <ParticleScene activeSection={activeIndex} />
 
       <div className="hero-scroll">
         {SECTIONS.map((section, i) => (
@@ -206,35 +136,42 @@ function Hero() {
             className="hero-section"
           >
             <div className="hero__content">
-              <div className="hero__icon" style={{ color: section.accent }}>
-                {ICONS[section.icon]}
-              </div>
-              <span
-                className="hero__badge"
-                style={{ color: section.accent, borderColor: section.accent }}
+              <div className="hero__icon">{ICONS[section.icon]}</div>
+              <span className="hero__badge">{section.badge}</span>
+              <div
+                className="hero__title-wrap"
+                ref={(el) => (titleRefs.current[i] = el)}
+                onMouseMove={(e) => {
+                  const wrap = titleRefs.current[i];
+                  if (!wrap) return;
+                  const r = wrap.getBoundingClientRect();
+                  const mx = (e.clientX - r.left) / r.width - 0.5;
+                  const my = (e.clientY - r.top) / r.height - 0.5;
+                  const h1 = wrap.querySelector("h1");
+                  if (h1) h1.style.transform = `rotateY(${mx * 22}deg) rotateX(${-my * 14}deg)`;
+                }}
+                onMouseLeave={() => {
+                  const wrap = titleRefs.current[i];
+                  const h1 = wrap?.querySelector("h1");
+                  if (h1) h1.style.transform = "rotateY(0deg) rotateX(0deg)";
+                }}
               >
-                {section.badge}
-              </span>
-              <h1 className="hero__title">
-                {section.titleParts.map((part, idx) =>
-                  part.highlight ? (
-                    <span key={idx} style={{ color: section.accent }}>
-                      {part.text}
-                    </span>
-                  ) : (
-                    <span key={idx}>{part.text}</span>
-                  )
-                )}
-              </h1>
+                <h1 className="hero__title">
+                  {section.titleParts.map((part, idx) =>
+                    part.highlight ? (
+                      <span key={idx} className="hero-accent">
+                        {part.text}
+                      </span>
+                    ) : (
+                      <span key={idx}>{part.text}</span>
+                    )
+                  )}
+                </h1>
+              </div>
               <p className="hero__subtitle">{section.subtitle}</p>
               <div className="hero__buttons">
                 {section.primaryBtn && (
-                  <button
-                    className="btn hero__btn-primary"
-                    style={{ background: section.primaryBtn.bg }}
-                  >
-                    {section.primaryBtn.label}
-                  </button>
+                  <button className="btn btn--primary">{section.primaryBtn.label}</button>
                 )}
                 <button className="btn btn--ghost">{section.secondaryBtn.label}</button>
               </div>
@@ -259,7 +196,6 @@ function Hero() {
               key={section.id}
               type="button"
               className={`hero__dot ${i === activeIndex ? "hero__dot--active" : ""}`}
-              style={i === activeIndex ? { background: section.accent } : undefined}
               onClick={() => goToSection(i)}
               aria-label={`Секция ${i + 1}`}
             />
