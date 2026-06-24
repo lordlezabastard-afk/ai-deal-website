@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import "./Features.css";
 
 const FEATURES = [
@@ -39,17 +40,49 @@ const FEATURES = [
   },
 ];
 
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 32, filter: "blur(6px)" },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] },
+  },
+};
+
+function trackMouse(e) {
+  const card = e.currentTarget;
+  const r = card.getBoundingClientRect();
+  card.style.setProperty("--mouse-x", `${((e.clientX - r.left) / r.width) * 100}%`);
+  card.style.setProperty("--mouse-y", `${((e.clientY - r.top) / r.height) * 100}%`);
+}
+
 function Features() {
   return (
-    <section className="features">
+    <motion.section
+      className="features"
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.2 }}
+    >
       {FEATURES.map((feature) => (
-        <div key={feature.id} className="features__card">
+        <motion.div
+          key={feature.id}
+          className="features__card feature-card"
+          variants={itemVariants}
+          onMouseMove={trackMouse}
+        >
           <div className="features__icon">{feature.icon}</div>
           <h3 className="features__title">{feature.title}</h3>
           <p className="features__text">{feature.text}</p>
-        </div>
+        </motion.div>
       ))}
-    </section>
+    </motion.section>
   );
 }
 

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useAuthModal } from "../context/AuthModalContext";
 import { useAuth } from "../context/AuthContext";
 import ParticleScene from "./ParticleScene";
+import { AnimatedLetters, AnimatedBlock } from "./AnimatedText";
+import { useMagnet } from "../hooks/useMagnet";
 import "./Hero.css";
 
 const SECTIONS = [
@@ -74,6 +76,22 @@ const ICONS = {
   ),
 };
 
+function MagnetBtn({ className, onClick, children, type = "button" }) {
+  const { ref, onMouseMove, onMouseLeave } = useMagnet(0.3);
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={className}
+      onClick={onClick}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+    >
+      {children}
+    </button>
+  );
+}
+
 function Hero() {
   const sectionRefs = useRef([]);
   const titleRefs = useRef([]);
@@ -136,8 +154,11 @@ function Hero() {
             className="hero-section"
           >
             <div className="hero__content">
-              <div className="hero__icon">{ICONS[section.icon]}</div>
-              <span className="hero__badge">{section.badge}</span>
+              <AnimatedBlock delay={0}>
+                <div className="hero__icon">{ICONS[section.icon]}</div>
+                <span className="hero__badge">{section.badge}</span>
+              </AnimatedBlock>
+
               <div
                 className="hero__title-wrap"
                 ref={(el) => (titleRefs.current[i] = el)}
@@ -159,32 +180,44 @@ function Hero() {
                 <h1 className="hero__title">
                   {section.titleParts.map((part, idx) =>
                     part.highlight ? (
-                      <span key={idx} className="hero-accent">
-                        {part.text}
-                      </span>
+                      <AnimatedLetters
+                        key={idx}
+                        text={part.text}
+                        className="hero-accent"
+                        delay={0.1 + idx * 0.05}
+                      />
                     ) : (
-                      <span key={idx}>{part.text}</span>
+                      <AnimatedLetters key={idx} text={part.text} delay={idx * 0.05} />
                     )
                   )}
                 </h1>
               </div>
-              <p className="hero__subtitle">{section.subtitle}</p>
-              <div className="hero__buttons">
-                {section.primaryBtn && (
-                  <button className="btn btn--primary">{section.primaryBtn.label}</button>
-                )}
-                <button className="btn btn--ghost">{section.secondaryBtn.label}</button>
-              </div>
-              {!isAuthenticated && (
-                <div className="hero__cta">
-                  <button
-                    type="button"
-                    className="hero__cta-btn beam-btn"
-                    onClick={openRegisterModal}
-                  >
-                    РЕГИСТРАЦИЯ
-                  </button>
+
+              <AnimatedBlock delay={0.4}>
+                <p className="hero__subtitle">{section.subtitle}</p>
+              </AnimatedBlock>
+
+              <AnimatedBlock delay={0.55}>
+                <div className="hero__buttons">
+                  {section.primaryBtn && (
+                    <MagnetBtn className="btn btn--primary">{section.primaryBtn.label}</MagnetBtn>
+                  )}
+                  <MagnetBtn className="btn btn--ghost">{section.secondaryBtn.label}</MagnetBtn>
                 </div>
+              </AnimatedBlock>
+
+              {!isAuthenticated && (
+                <AnimatedBlock delay={0.65}>
+                  <div className="hero__cta">
+                    <MagnetBtn
+                      type="button"
+                      className="hero__cta-btn beam-btn"
+                      onClick={openRegisterModal}
+                    >
+                      РЕГИСТРАЦИЯ
+                    </MagnetBtn>
+                  </div>
+                </AnimatedBlock>
               )}
             </div>
           </section>

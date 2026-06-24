@@ -1,5 +1,20 @@
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import "./Stats.css";
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 32, filter: "blur(6px)" },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] },
+  },
+};
 
 function useCountUp(target, duration = 2000, suffix = "") {
   const [value, setValue] = useState("0" + suffix);
@@ -47,16 +62,22 @@ export default function Stats() {
   ];
 
   return (
-    <section className="stats">
+    <motion.section
+      className="stats"
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.3 }}
+    >
       {STATS.map(({ label }, i) => {
         const [val, ref] = counters[i];
         return (
-          <div key={label} className="stat" ref={ref}>
+          <motion.div key={label} className="stat" variants={itemVariants} ref={ref}>
             <span className="stat__number">{val}</span>
             <span className="stat__label">{label}</span>
-          </div>
+          </motion.div>
         );
       })}
-    </section>
+    </motion.section>
   );
 }

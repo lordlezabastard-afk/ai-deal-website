@@ -2,11 +2,22 @@ import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthModal } from "../context/AuthModalContext";
 import { useAuth } from "../context/AuthContext";
+import { useMagnet } from "../hooks/useMagnet";
 import "./Navbar.css";
 
 function Navbar({ sidebarOpen, onBurgerClick }) {
   const { openRegisterModal, openLoginModal } = useAuthModal();
   const { isAuthenticated } = useAuth();
+  const {
+    ref: loginRef,
+    onMouseMove: loginOnMouseMove,
+    onMouseLeave: loginOnMouseLeave,
+  } = useMagnet(0.25);
+  const {
+    ref: registerRef,
+    onMouseMove: registerOnMouseMove,
+    onMouseLeave: registerOnMouseLeave,
+  } = useMagnet(0.25);
 
   return (
     <header className="navbar">
@@ -31,10 +42,20 @@ function Navbar({ sidebarOpen, onBurgerClick }) {
               type="button"
               className="navbar__btn-login navbar__login"
               onClick={openLoginModal}
+              ref={loginRef}
+              onMouseMove={loginOnMouseMove}
+              onMouseLeave={loginOnMouseLeave}
             >
               Войти
             </button>
-            <button type="button" className="navbar__btn-register" onClick={openRegisterModal}>
+            <button
+              type="button"
+              className="navbar__btn-register"
+              onClick={openRegisterModal}
+              ref={registerRef}
+              onMouseMove={registerOnMouseMove}
+              onMouseLeave={registerOnMouseLeave}
+            >
               Регистрация
             </button>
           </div>
