@@ -24,9 +24,7 @@
   width: 420px;
   max-width: 90vw;
   padding: 36px 32px;
-  background: rgba(0, 0, 0, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--color-void);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius);
   animation: register-modal-scale-in 0.25s ease forwards;
@@ -71,8 +69,8 @@
 
 .register-modal__tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: var(--spacing-6);
+  margin-bottom: var(--spacing-24);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -97,7 +95,7 @@
 .register-modal__form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--spacing-18);
 }
 
 .register-modal__field {
@@ -153,8 +151,8 @@
 }
 
 .register-modal__error {
-  font-size: 12px;
-  color: #f87171;
+  font-size: var(--text-caption);
+  color: var(--color-amber-spark);
 }
 
 .register-modal__error--general {

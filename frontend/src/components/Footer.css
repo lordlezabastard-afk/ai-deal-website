@@ -9,8 +9,8 @@
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  padding: 2.5rem 24px;
-  gap: 16px;
+  padding: var(--spacing-36) var(--spacing-24);
+  gap: var(--spacing-18);
 }
 
 .footer::before {
@@ -46,7 +46,7 @@
 
 .footer__links {
   display: flex;
-  gap: 22px;
+  gap: var(--spacing-24);
 }
 
 .footer__link {
@@ -77,7 +77,7 @@
   .footer {
     flex-direction: column;
     text-align: center;
-    gap: 18px;
+    gap: var(--spacing-18);
   }
 
   .footer__brand {

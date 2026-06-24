@@ -25,16 +25,18 @@
   width: 44px;
   height: 44px;
   margin-bottom: 14px;
+  color: var(--color-plum-voltage);
 }
 
 .hero__badge {
   display: inline-block;
   font-family: var(--font-main);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-caption);
   padding: 6px 14px;
+  color: var(--color-plum-voltage);
   border: 1px solid rgba(128, 82, 255, 0.3);
   border-radius: var(--radius);
   background: transparent;
@@ -42,21 +44,21 @@
 }
 
 .hero__title {
-  font-size: 52px;
-  line-height: 1.05;
-  font-weight: 200;
-  letter-spacing: -0.04em;
+  font-size: var(--text-display);
+  line-height: var(--leading-display);
+  font-weight: var(--font-weight-extralight);
+  letter-spacing: var(--tracking-display);
   margin: 0 0 16px;
   color: var(--color-bone);
 }
 
 .hero__subtitle {
-  font-size: 15px;
-  font-weight: 400;
-  line-height: 1.6;
-  letter-spacing: 0.025em;
+  font-size: var(--text-subheading);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--leading-subheading);
+  letter-spacing: var(--tracking-subheading);
   color: var(--color-ash);
-  max-width: 420px;
+  max-width: 60ch;
   margin: 0 0 28px;
 }
 
@@ -98,13 +100,13 @@
 .hero__cta-btn {
   background: var(--color-plum-voltage);
   border: none;
-  color: #ffffff;
+  color: var(--color-bone);
   border-radius: var(--radius);
-  padding: 14px 20px;
+  padding: 14px 16px;
   font-family: var(--font-main);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-caption);
   text-transform: uppercase;
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
@@ -134,7 +136,10 @@
 .hero__dot {
   width: 9px;
   height: 9px;
-  border-radius: 50%;
+  /* var(--radius) (24px) клампится браузером до полного скругления на таких
+     маленьких элементах — визуально это тот же круг/пилюля, но без отдельного
+     "недо-24px" значения радиуса, которое запрещено спекой для интерактивных элементов. */
+  border-radius: var(--radius);
   border: none;
   background: rgba(255, 255, 255, 0.2);
   padding: 0;
@@ -142,7 +147,8 @@
 
 .hero__dot--active {
   width: 22px;
-  border-radius: 5px;
+  border-radius: var(--radius);
+  background: var(--color-plum-voltage);
 }
 
 @media (max-width: 768px) {
@@ -165,18 +171,24 @@
   }
 
   .hero__title {
-    font-size: 36px;
+    font-size: var(--text-heading-lg);
+    line-height: var(--leading-heading-lg);
+    letter-spacing: var(--tracking-heading-lg);
   }
 
   .hero__subtitle {
-    font-size: 14px;
+    font-size: var(--text-body-sm);
+    line-height: var(--leading-body-sm);
+    letter-spacing: var(--tracking-body-sm);
     max-width: 100%;
   }
 }
 
 @media (max-width: 480px) {
   .hero__title {
-    font-size: 28px;
+    font-size: var(--text-heading);
+    line-height: var(--leading-heading);
+    letter-spacing: var(--tracking-heading);
   }
 
   .hero__content {

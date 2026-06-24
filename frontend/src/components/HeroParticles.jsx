@@ -74,18 +74,6 @@ function seededRandom(seed) {
 // Hero, визуал (сфера/мозг/руки) — правую, центр формы садится на 73% ширины.
 const SHAPE_CENTER_X_RATIO = 0.73;
 
-function isPointInPolygon(x, y, polygon) {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    const intersects =
-      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-    if (intersects) inside = !inside;
-  }
-  return inside;
-}
-
 function generateSphere(count, width, height) {
   const cx = width * SHAPE_CENTER_X_RATIO;
   const cy = height * 0.48;

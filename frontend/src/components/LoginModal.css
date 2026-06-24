@@ -24,9 +24,7 @@
   width: 420px;
   max-width: 90vw;
   padding: 36px 32px;
-  background: rgba(0, 0, 0, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--color-void);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius);
   animation: login-modal-scale-in 0.25s ease forwards;
@@ -72,7 +70,7 @@
 .login-modal__form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--spacing-18);
 }
 
 .login-modal__field {
@@ -128,8 +126,8 @@
 }
 
 .login-modal__error {
-  font-size: 12px;
-  color: #f87171;
+  font-size: var(--text-caption);
+  color: var(--color-amber-spark);
 }
 
 .login-modal__error--general {

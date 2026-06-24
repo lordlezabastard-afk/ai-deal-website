@@ -16,7 +16,6 @@ const SECTIONS = [
     ],
     subtitle:
       "Платформа для обучения AI-технологиям, автоматизации бизнеса и построения партнёрской сети с пожизненным доходом",
-    accent: "#8052ff",
     primaryBtn: null,
     secondaryBtn: { label: "Узнать больше" },
   },
@@ -33,7 +32,6 @@ const SECTIONS = [
     ],
     subtitle:
       "Мощный набор средств для вашего бизнеса. Поможет внедрить нейросети и облачные сервисы. Автоматизирует задачи, улучшит процессы и увеличит производительность. Всё готово к использованию",
-    accent: "#8052ff",
     primaryBtn: { label: "Смотреть курсы" },
     secondaryBtn: { label: "Как это работает" },
   },
@@ -47,7 +45,6 @@ const SECTIONS = [
     ],
     subtitle:
       "Приглашай партнёров и зарабатывай с трёх уровней структуры. Чем больше команда — тем выше доход.",
-    accent: "#8052ff",
     primaryBtn: { label: "Начать зарабатывать" },
     secondaryBtn: { label: "Условия партнёрки" },
   },
@@ -143,15 +140,8 @@ function Hero() {
             className="hero-section"
           >
             <div className="hero__content">
-              <div className="hero__icon" style={{ color: section.accent }}>
-                {ICONS[section.icon]}
-              </div>
-              <span
-                className="hero__badge"
-                style={{ color: section.accent, borderColor: section.accent }}
-              >
-                {section.badge}
-              </span>
+              <div className="hero__icon">{ICONS[section.icon]}</div>
+              <span className="hero__badge">{section.badge}</span>
               <h1 className="hero__title">
                 {section.titleParts.map((part, idx) =>
                   part.highlight ? (
@@ -191,7 +181,6 @@ function Hero() {
               key={section.id}
               type="button"
               className={`hero__dot ${i === activeIndex ? "hero__dot--active" : ""}`}
-              style={i === activeIndex ? { background: section.accent } : undefined}
               onClick={() => goToSection(i)}
               aria-label={`Секция ${i + 1}`}
             />

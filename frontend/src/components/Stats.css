@@ -6,7 +6,7 @@
   display: flex;
   max-width: 900px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: var(--spacing-36) var(--spacing-24);
 }
 
 .stats__item {
@@ -30,23 +30,23 @@
 }
 
 .stats__label {
-  font-size: 14px;
+  font-size: var(--text-body-sm);
   font-weight: 400;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-body-sm);
   text-transform: uppercase;
   color: var(--color-smoke);
 }
 
 @media (max-width: 480px) {
   .stats {
-    padding: 28px 12px;
+    padding: var(--spacing-30) var(--spacing-12);
   }
 
   .stats__value {
-    font-size: 20px;
+    font-size: var(--text-heading-sm);
   }
 
   .stats__label {
-    font-size: 11px;
+    font-size: var(--text-caption);
   }
 }

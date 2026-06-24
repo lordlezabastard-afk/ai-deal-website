@@ -5,10 +5,10 @@
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: var(--spacing-18);
   max-width: 1100px;
   margin: 0 auto;
-  padding: 20px 24px 60px;
+  padding: var(--spacing-18) var(--spacing-24) var(--spacing-60);
 }
 
 .features__card {
