@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuthModal } from "../context/AuthModalContext";
 import { useAuth } from "../context/AuthContext";
-import HeroParticles from "./HeroParticles";
+import ParticleScene from "./ParticleScene";
 import "./Hero.css";
 
 const SECTIONS = [
@@ -130,7 +130,7 @@ function Hero() {
 
   return (
     <>
-      <HeroParticles activeIndex={activeIndex} />
+      <ParticleScene activeSection={activeIndex} />
 
       <div className="hero-scroll">
         {SECTIONS.map((section, i) => (
