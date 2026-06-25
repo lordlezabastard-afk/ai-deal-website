@@ -172,119 +172,126 @@ function generateHandshake(count) {
   const positions = [];
   const rand = seededRandom(13);
 
+  // Центр — правая половина экрана
   const cx = 1.5;
   const cy = 0.0;
 
-  const leftCount = Math.floor(count * 0.45);
-  const rightCount = Math.floor(count * 0.45);
+  const leftCount = Math.floor(count * 0.44);
+  const rightCount = Math.floor(count * 0.44);
   const gripCount = count - leftCount - rightCount;
 
-  // ─── ЛЕВАЯ РУКА (снизу-слева → вверх-вправо) ───
-  const leftForearm = Math.floor(leftCount * 0.3);
-  for (let i = 0; i < leftForearm; i++) {
-    const t = i / leftForearm;
-    const bx = -2.2 + t * 1.8;
-    const by = -1.4 + t * 1.3;
+  // ── ЛЕВАЯ РУКА: идёт из нижнего-левого угла вверх-вправо ──
+  // Предплечье: от (-2.0, -1.2) до (-0.5, -0.15)
+  const lForearm = Math.floor(leftCount * 0.28);
+  for (let i = 0; i < lForearm; i++) {
+    const t = i / lForearm;
+    const x = cx + (-2.0 + t * 1.5) + (rand() - 0.5) * 0.12;
+    const y = cy + (-1.2 + t * 1.05) + (rand() - 0.5) * 0.08;
+    const z = (rand() - 0.5) * 0.15;
+    positions.push(new THREE.Vector3(x, y, z));
+  }
+
+  // Запястье и ладонь левой руки
+  const lPalm = Math.floor(leftCount * 0.32);
+  for (let i = 0; i < lPalm; i++) {
+    const t = i / lPalm;
     const angle = rand() * Math.PI * 2;
-    const r = 0.10 + rand() * 0.07;
+    const r = (0.13 + rand() * 0.09) * (1 - t * 0.3);
+    const x = cx + (-0.5 + t * 0.45) + Math.cos(angle) * r;
+    const y = cy + (-0.15 + t * 0.12) + Math.sin(angle) * r * 0.7;
+    positions.push(new THREE.Vector3(x, y, (rand() - 0.5) * 0.18));
+  }
+
+  // Пальцы левой руки — загнуты ВПРАВО (захватывают правую руку)
+  // Большой палец — вниз-вправо
+  const lThumbCount = Math.floor(leftCount * 0.08);
+  for (let i = 0; i < lThumbCount; i++) {
+    const t = i / lThumbCount;
     positions.push(new THREE.Vector3(
-      cx + bx + Math.cos(angle) * r,
-      cy + by + Math.sin(angle) * r * 0.6,
-      (rand() - 0.5) * 0.2
+      cx + (-0.05 + t * 0.28) + (rand() - 0.5) * 0.03,
+      cy + (-0.08 - t * 0.22) + (rand() - 0.5) * 0.03,
+      (rand() - 0.5) * 0.08
     ));
   }
 
-  const leftPalm = Math.floor(leftCount * 0.35);
-  for (let i = 0; i < leftPalm; i++) {
-    const t = i / leftPalm;
-    const bx = -0.4 + t * 0.35;
-    const by = -0.1 + t * 0.1;
-    const angle = rand() * Math.PI * 2;
-    const r = 0.16 + rand() * 0.10;
-    positions.push(new THREE.Vector3(
-      cx + bx + Math.cos(angle) * r * 0.85,
-      cy + by + Math.sin(angle) * r,
-      (rand() - 0.5) * 0.25
-    ));
-  }
-
-  const leftFingers = leftCount - leftForearm - leftPalm;
-  const leftFingerOffsets = [
-    { dx: 0.0, dy: 0.35, angle: -0.3 },
-    { dx: 0.08, dy: 0.18, angle: -0.2 },
-    { dx: 0.12, dy: 0.0, angle: -0.1 },
-    { dx: 0.08, dy: -0.18, angle: 0.1 },
+  // 4 пальца — веером вправо-вверх
+  const lFingerData = [
+    { startY: 0.30, endX: 0.42, endY: 0.12 },
+    { startY: 0.15, endX: 0.48, endY: 0.05 },
+    { startY: 0.02, endX: 0.46, endY: -0.05 },
+    { startY: -0.12, endX: 0.38, endY: -0.14 },
   ];
-  const perFinger = Math.floor(leftFingers / 4);
-  leftFingerOffsets.forEach(({ dx, dy, angle: fa }) => {
-    for (let i = 0; i < perFinger; i++) {
-      const t = i / perFinger;
-      const length = 0.38 + rand() * 0.05;
+  const lPerFinger = Math.floor((leftCount - lForearm - lPalm - lThumbCount) / 4);
+  lFingerData.forEach(({ startY, endX, endY }) => {
+    for (let i = 0; i < lPerFinger; i++) {
+      const t = i / lPerFinger;
       positions.push(new THREE.Vector3(
-        cx - 0.05 + dx + Math.cos(fa) * t * length + (rand() - 0.5) * 0.04,
-        cy + dy + Math.sin(fa) * t * length + (rand() - 0.5) * 0.04,
-        (rand() - 0.5) * 0.12
+        cx + (-0.05 + t * endX) + (rand() - 0.5) * 0.025,
+        cy + (startY + t * (endY - startY)) + (rand() - 0.5) * 0.025,
+        (rand() - 0.5) * 0.08
       ));
     }
   });
 
-  // ─── ПРАВАЯ РУКА (сверху-справа → вниз-влево) ───
-  const rightForearm = Math.floor(rightCount * 0.3);
-  for (let i = 0; i < rightForearm; i++) {
-    const t = i / rightForearm;
-    const bx = 2.2 - t * 1.8;
-    const by = 1.4 - t * 1.3;
+  // ── ПРАВАЯ РУКА: идёт из верхнего-правого угла вниз-влево ──
+  // Предплечье: от (2.0, 1.2) до (0.5, 0.15)
+  const rForearm = Math.floor(rightCount * 0.28);
+  for (let i = 0; i < rForearm; i++) {
+    const t = i / rForearm;
+    const x = cx + (2.0 - t * 1.5) + (rand() - 0.5) * 0.12;
+    const y = cy + (1.2 - t * 1.05) + (rand() - 0.5) * 0.08;
+    positions.push(new THREE.Vector3(x, y, (rand() - 0.5) * 0.15));
+  }
+
+  // Запястье и ладонь правой руки
+  const rPalm = Math.floor(rightCount * 0.32);
+  for (let i = 0; i < rPalm; i++) {
+    const t = i / rPalm;
     const angle = rand() * Math.PI * 2;
-    const r = 0.10 + rand() * 0.07;
+    const r = (0.13 + rand() * 0.09) * (1 - t * 0.3);
+    const x = cx + (0.5 - t * 0.45) + Math.cos(angle) * r;
+    const y = cy + (0.15 - t * 0.12) + Math.sin(angle) * r * 0.7;
+    positions.push(new THREE.Vector3(x, y, (rand() - 0.5) * 0.18));
+  }
+
+  // Большой палец правой руки — вверх-влево
+  const rThumbCount = Math.floor(rightCount * 0.08);
+  for (let i = 0; i < rThumbCount; i++) {
+    const t = i / rThumbCount;
     positions.push(new THREE.Vector3(
-      cx + bx + Math.cos(angle) * r,
-      cy + by + Math.sin(angle) * r * 0.6,
-      (rand() - 0.5) * 0.2
+      cx + (0.05 - t * 0.28) + (rand() - 0.5) * 0.03,
+      cy + (0.08 + t * 0.22) + (rand() - 0.5) * 0.03,
+      (rand() - 0.5) * 0.08
     ));
   }
 
-  const rightPalm = Math.floor(rightCount * 0.35);
-  for (let i = 0; i < rightPalm; i++) {
-    const t = i / rightPalm;
-    const bx = 0.4 - t * 0.35;
-    const by = 0.1 - t * 0.1;
-    const angle = rand() * Math.PI * 2;
-    const r = 0.16 + rand() * 0.10;
-    positions.push(new THREE.Vector3(
-      cx + bx + Math.cos(angle) * r * 0.85,
-      cy + by + Math.sin(angle) * r,
-      (rand() - 0.5) * 0.25
-    ));
-  }
-
-  const rightFingers = rightCount - rightForearm - rightPalm;
-  const rightFingerOffsets = [
-    { dx: 0.0, dy: -0.35, angle: 0.3 },
-    { dx: -0.08, dy: -0.18, angle: 0.2 },
-    { dx: -0.12, dy: 0.0, angle: 0.1 },
-    { dx: -0.08, dy: 0.18, angle: -0.1 },
+  // 4 пальца правой — веером влево-вниз (зеркально левой)
+  const rFingerData = [
+    { startY: -0.30, endX: -0.42, endY: -0.12 },
+    { startY: -0.15, endX: -0.48, endY: -0.05 },
+    { startY: -0.02, endX: -0.46, endY: 0.05 },
+    { startY: 0.12, endX: -0.38, endY: 0.14 },
   ];
-  const perFingerR = Math.floor(rightFingers / 4);
-  rightFingerOffsets.forEach(({ dx, dy, angle: fa }) => {
-    for (let i = 0; i < perFingerR; i++) {
-      const t = i / perFingerR;
-      const length = 0.38 + rand() * 0.05;
+  const rPerFinger = Math.floor((rightCount - rForearm - rPalm - rThumbCount) / 4);
+  rFingerData.forEach(({ startY, endX, endY }) => {
+    for (let i = 0; i < rPerFinger; i++) {
+      const t = i / rPerFinger;
       positions.push(new THREE.Vector3(
-        cx + 0.05 + dx + Math.cos(fa + Math.PI) * t * length + (rand() - 0.5) * 0.04,
-        cy + dy + Math.sin(fa + Math.PI) * t * length + (rand() - 0.5) * 0.04,
-        (rand() - 0.5) * 0.12
+        cx + (0.05 + t * endX) + (rand() - 0.5) * 0.025,
+        cy + (startY + t * (endY - startY)) + (rand() - 0.5) * 0.025,
+        (rand() - 0.5) * 0.08
       ));
     }
   });
 
-  // ─── ЗОНА СЦЕПЛЕНИЯ (центр) ───
+  // ── ЗОНА СЦЕПЛЕНИЯ — плотное скопление в центре ──
   for (let i = 0; i < gripCount; i++) {
     const angle = rand() * Math.PI * 2;
-    const r = rand() * 0.22;
+    const r = rand() * rand() * 0.28; // квадрат rand для плотного ядра
     positions.push(new THREE.Vector3(
-      cx + Math.cos(angle) * r * 1.2,
-      cy + Math.sin(angle) * r,
-      (rand() - 0.5) * 0.18
+      cx + Math.cos(angle) * r * 1.1 + (rand() - 0.5) * 0.04,
+      cy + Math.sin(angle) * r * 0.8 + (rand() - 0.5) * 0.04,
+      (rand() - 0.5) * 0.14
     ));
   }
 
@@ -321,8 +328,28 @@ function ParticleMorphSystem({ activeSection, count }) {
   // изолированным репро); обычный per-vertex color-атрибут BufferGeometry работает корректно.
   // Два отдельных Points-слоя (фон/модели) вместо одного буфера — чтобы у них были
   // разные size/opacity в pointsMaterial.
-  const bgPositions = useMemo(() => new Float32Array(bgCount * 3), [bgCount]);
-  const bgColors = useMemo(() => new Float32Array(bgCount * 3), [bgCount]);
+  const bgPositions = useMemo(() => {
+    const arr = new Float32Array(bgCount * 3);
+    const layout = generateBackground(bgCount);
+    for (let i = 0; i < bgCount; i++) {
+      arr[i * 3] = layout[i].x;
+      arr[i * 3 + 1] = layout[i].y;
+      arr[i * 3 + 2] = layout[i].z;
+    }
+    return arr;
+  }, [bgCount]);
+  const bgColors = useMemo(() => {
+    const arr = new Float32Array(bgCount * 3);
+    const rand = seededRandom(99);
+    const palette = SECTION_COLORS[0];
+    for (let i = 0; i < bgCount; i++) {
+      const c = new THREE.Color(pickWeighted(rand(), palette).color);
+      arr[i * 3] = c.r;
+      arr[i * 3 + 1] = c.g;
+      arr[i * 3 + 2] = c.b;
+    }
+    return arr;
+  }, [bgCount]);
   const fgPositions = useMemo(() => new Float32Array(fgCount * 3), [fgCount]);
   const fgColors = useMemo(() => new Float32Array(fgCount * 3), [fgCount]);
 
@@ -516,12 +543,13 @@ function ParticleMorphSystem({ activeSection, count }) {
         <pointsMaterial
           vertexColors
           transparent
-          opacity={0.25}
-          size={0.05}
+          opacity={0.5}
+          size={0.06}
           sizeAttenuation
           depthWrite={false}
           map={bgSpriteTexture}
-          alphaTest={0.4}
+          alphaMap={bgSpriteTexture}
+          alphaTest={0.1}
         />
       </points>
       <points>
