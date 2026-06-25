@@ -139,52 +139,125 @@ function generateBrain(count) {
 function generateHandshake(count) {
   const positions = [];
   const rand = seededRandom(13);
-  const cx = 1.5;
-  const half = Math.floor((count - 120) / 2);
 
-  function generateHand(sign, n) {
-    const pts = [];
-    const forearmCount = Math.round(n * 0.25);
-    for (let i = 0; i < forearmCount; i++) {
-      const t = i / forearmCount;
-      const x = sign * (2.5 - t * 1.8);
-      const y = sign * (-1.2 + t * 0.9);
-      const z = (rand() - 0.5) * 0.25;
-      const angle = rand() * Math.PI * 2;
-      const r = 0.12 + rand() * 0.08;
-      pts.push(new THREE.Vector3(x + Math.cos(angle) * r, y + Math.sin(angle) * r * 0.7, z));
-    }
-    const palmCount = Math.round(n * 0.35);
-    for (let i = 0; i < palmCount; i++) {
-      const t = i / palmCount;
-      const x = sign * (0.7 - t * 0.5);
-      const y = sign * (-0.3 + t * 0.15);
-      const angle = rand() * Math.PI * 2;
-      const r = 0.18 + rand() * 0.12;
-      pts.push(new THREE.Vector3(x + Math.cos(angle) * r * 0.9, y + Math.sin(angle) * r, (rand() - 0.5) * 0.3));
-    }
-    const fingerOffsets = [-0.22, -0.07, 0.08, 0.22];
-    const fingerLengths = [0.45, 0.52, 0.5, 0.4];
-    fingerOffsets.forEach((offset, fi) => {
-      const fCount = Math.floor(n * 0.1);
-      for (let i = 0; i < fCount; i++) {
-        const t = i / fCount;
-        const angle = rand() * Math.PI * 2;
-        const r = 0.055;
-        pts.push(new THREE.Vector3(sign * (0.2 - t * fingerLengths[fi]), offset + (rand() - 0.5) * 0.04, (rand() - 0.5) * 0.15 + Math.cos(angle) * r));
-      }
-    });
-    return pts;
+  const cx = 1.5;
+  const cy = 0.0;
+
+  const leftCount = Math.floor(count * 0.45);
+  const rightCount = Math.floor(count * 0.45);
+  const gripCount = count - leftCount - rightCount;
+
+  // ─── ЛЕВАЯ РУКА (снизу-слева → вверх-вправо) ───
+  const leftForearm = Math.floor(leftCount * 0.3);
+  for (let i = 0; i < leftForearm; i++) {
+    const t = i / leftForearm;
+    const bx = -2.2 + t * 1.8;
+    const by = -1.4 + t * 1.3;
+    const angle = rand() * Math.PI * 2;
+    const r = 0.10 + rand() * 0.07;
+    positions.push(new THREE.Vector3(
+      cx + bx + Math.cos(angle) * r,
+      cy + by + Math.sin(angle) * r * 0.6,
+      (rand() - 0.5) * 0.2
+    ));
   }
 
-  generateHand(1, half).forEach((p) => positions.push(p.add(new THREE.Vector3(cx, 0, 0))));
-  generateHand(-1, count - 120 - half).forEach((p) => positions.push(p.add(new THREE.Vector3(cx, 0, 0))));
-  for (let i = 0; i < 120; i++) {
-    positions.push(new THREE.Vector3(cx + (rand() - 0.5) * 0.3, (rand() - 0.5) * 0.2, (rand() - 0.5) * 0.25));
+  const leftPalm = Math.floor(leftCount * 0.35);
+  for (let i = 0; i < leftPalm; i++) {
+    const t = i / leftPalm;
+    const bx = -0.4 + t * 0.35;
+    const by = -0.1 + t * 0.1;
+    const angle = rand() * Math.PI * 2;
+    const r = 0.16 + rand() * 0.10;
+    positions.push(new THREE.Vector3(
+      cx + bx + Math.cos(angle) * r * 0.85,
+      cy + by + Math.sin(angle) * r,
+      (rand() - 0.5) * 0.25
+    ));
+  }
+
+  const leftFingers = leftCount - leftForearm - leftPalm;
+  const leftFingerOffsets = [
+    { dx: 0.0, dy: 0.35, angle: -0.3 },
+    { dx: 0.08, dy: 0.18, angle: -0.2 },
+    { dx: 0.12, dy: 0.0, angle: -0.1 },
+    { dx: 0.08, dy: -0.18, angle: 0.1 },
+  ];
+  const perFinger = Math.floor(leftFingers / 4);
+  leftFingerOffsets.forEach(({ dx, dy, angle: fa }) => {
+    for (let i = 0; i < perFinger; i++) {
+      const t = i / perFinger;
+      const length = 0.38 + rand() * 0.05;
+      positions.push(new THREE.Vector3(
+        cx - 0.05 + dx + Math.cos(fa) * t * length + (rand() - 0.5) * 0.04,
+        cy + dy + Math.sin(fa) * t * length + (rand() - 0.5) * 0.04,
+        (rand() - 0.5) * 0.12
+      ));
+    }
+  });
+
+  // ─── ПРАВАЯ РУКА (сверху-справа → вниз-влево) ───
+  const rightForearm = Math.floor(rightCount * 0.3);
+  for (let i = 0; i < rightForearm; i++) {
+    const t = i / rightForearm;
+    const bx = 2.2 - t * 1.8;
+    const by = 1.4 - t * 1.3;
+    const angle = rand() * Math.PI * 2;
+    const r = 0.10 + rand() * 0.07;
+    positions.push(new THREE.Vector3(
+      cx + bx + Math.cos(angle) * r,
+      cy + by + Math.sin(angle) * r * 0.6,
+      (rand() - 0.5) * 0.2
+    ));
+  }
+
+  const rightPalm = Math.floor(rightCount * 0.35);
+  for (let i = 0; i < rightPalm; i++) {
+    const t = i / rightPalm;
+    const bx = 0.4 - t * 0.35;
+    const by = 0.1 - t * 0.1;
+    const angle = rand() * Math.PI * 2;
+    const r = 0.16 + rand() * 0.10;
+    positions.push(new THREE.Vector3(
+      cx + bx + Math.cos(angle) * r * 0.85,
+      cy + by + Math.sin(angle) * r,
+      (rand() - 0.5) * 0.25
+    ));
+  }
+
+  const rightFingers = rightCount - rightForearm - rightPalm;
+  const rightFingerOffsets = [
+    { dx: 0.0, dy: -0.35, angle: 0.3 },
+    { dx: -0.08, dy: -0.18, angle: 0.2 },
+    { dx: -0.12, dy: 0.0, angle: 0.1 },
+    { dx: -0.08, dy: 0.18, angle: -0.1 },
+  ];
+  const perFingerR = Math.floor(rightFingers / 4);
+  rightFingerOffsets.forEach(({ dx, dy, angle: fa }) => {
+    for (let i = 0; i < perFingerR; i++) {
+      const t = i / perFingerR;
+      const length = 0.38 + rand() * 0.05;
+      positions.push(new THREE.Vector3(
+        cx + 0.05 + dx + Math.cos(fa + Math.PI) * t * length + (rand() - 0.5) * 0.04,
+        cy + dy + Math.sin(fa + Math.PI) * t * length + (rand() - 0.5) * 0.04,
+        (rand() - 0.5) * 0.12
+      ));
+    }
+  });
+
+  // ─── ЗОНА СЦЕПЛЕНИЯ (центр) ───
+  for (let i = 0; i < gripCount; i++) {
+    const angle = rand() * Math.PI * 2;
+    const r = rand() * 0.22;
+    positions.push(new THREE.Vector3(
+      cx + Math.cos(angle) * r * 1.2,
+      cy + Math.sin(angle) * r,
+      (rand() - 0.5) * 0.18
+    ));
   }
 
   while (positions.length < count) {
-    positions.push(positions[positions.length % Math.max(1, positions.length)].clone());
+    positions.push(positions[positions.length % Math.max(1, positions.length - 1)].clone());
   }
   return positions.slice(0, count);
 }
@@ -195,8 +268,10 @@ const SHAPE_GENERATORS = [generateSphere, generateBrain, generateHandshake];
 const BG_RATIO = 0.25;
 
 function ParticleMorphSystem({ activeSection, count }) {
-  const positionAttrRef = useRef(null);
-  const colorAttrRef = useRef(null);
+  const bgPositionAttrRef = useRef(null);
+  const bgColorAttrRef = useRef(null);
+  const fgPositionAttrRef = useRef(null);
+  const fgColorAttrRef = useRef(null);
   const groupRef = useRef(null);
   const pointer = useRef({ x: 0, y: 0, active: false });
   const cameraTarget = useRef({ x: 0, y: 0 });
@@ -210,8 +285,12 @@ function ParticleMorphSystem({ activeSection, count }) {
   // Points (а не instancedMesh) — у используемой версии Three.js/R3F instanceColor
   // на InstancedMesh рендерится чёрным независимо от заданных цветов (подтверждено
   // изолированным репро); обычный per-vertex color-атрибут BufferGeometry работает корректно.
-  const positions = useMemo(() => new Float32Array(count * 3), [count]);
-  const colors = useMemo(() => new Float32Array(count * 3), [count]);
+  // Два отдельных Points-слоя (фон/модели) вместо одного буфера — чтобы у них были
+  // разные size/opacity в pointsMaterial.
+  const bgPositions = useMemo(() => new Float32Array(bgCount * 3), [bgCount]);
+  const bgColors = useMemo(() => new Float32Array(bgCount * 3), [bgCount]);
+  const fgPositions = useMemo(() => new Float32Array(fgCount * 3), [fgCount]);
+  const fgColors = useMemo(() => new Float32Array(fgCount * 3), [fgCount]);
 
   const layouts = useMemo(() => SHAPE_GENERATORS.map((gen) => gen(fgCount)), [fgCount]);
   const bgLayout = useMemo(() => generateBackground(bgCount), [bgCount]);
@@ -305,9 +384,11 @@ function ParticleMorphSystem({ activeSection, count }) {
   }, []);
 
   useFrame((state, delta) => {
-    const positionAttr = positionAttrRef.current;
-    const colorAttr = colorAttrRef.current;
-    if (!positionAttr || !colorAttr) return;
+    const bgPositionAttr = bgPositionAttrRef.current;
+    const bgColorAttr = bgColorAttrRef.current;
+    const fgPositionAttr = fgPositionAttrRef.current;
+    const fgColorAttr = fgColorAttrRef.current;
+    if (!bgPositionAttr || !bgColorAttr || !fgPositionAttr || !fgColorAttr) return;
 
     // Плавный параллакс камеры — следит за курсором с инерцией
     const targetCamX = pointer.current.active ? pointer.current.x * CAMERA_PARALLAX_X : 0;
@@ -327,12 +408,27 @@ function ParticleMorphSystem({ activeSection, count }) {
     const lerpT = Math.min(1, delta * MORPH_LERP * 6);
     const colorLerpT = Math.min(1, delta * 2);
 
-    for (let i = 0; i < particles.length; i++) {
+    // Фоновые частицы (0..bgCount-1)
+    for (let i = 0; i < bgCount; i++) {
       const p = particles[i];
+      p.color.lerp(p.to, colorLerpT);
 
-      if (!p.isBg) {
-        p.current.lerp(p.target, lerpT);
-      }
+      bgPositions[i * 3] = p.current.x + Math.sin(t * p.speed + p.phase) * 0.03;
+      bgPositions[i * 3 + 1] = p.current.y + Math.cos(t * p.speed * 0.7 + p.phase) * 0.03;
+      bgPositions[i * 3 + 2] = p.current.z;
+
+      bgColors[i * 3] = p.color.r;
+      bgColors[i * 3 + 1] = p.color.g;
+      bgColors[i * 3 + 2] = p.color.b;
+    }
+    bgPositionAttr.needsUpdate = true;
+    bgColorAttr.needsUpdate = true;
+
+    // Основные (морфинг) частицы (bgCount..end), локальный индекс j
+    for (let i = bgCount; i < particles.length; i++) {
+      const j = i - bgCount;
+      const p = particles[i];
+      p.current.lerp(p.target, lerpT);
       p.color.lerp(p.to, colorLerpT);
 
       let repelX = 0, repelY = 0, repelZ = 0;
@@ -352,22 +448,16 @@ function ParticleMorphSystem({ activeSection, count }) {
       p.repel.y += (repelY - p.repel.y) * 0.15;
       p.repel.z += (repelZ - p.repel.z) * 0.15;
 
-      const floatAmp = p.isBg ? 0.03 : 0.015;
-      positions[i * 3] = p.current.x + p.repel.x + Math.sin(t * p.speed + p.phase) * floatAmp;
-      positions[i * 3 + 1] = p.current.y + p.repel.y + Math.cos(t * p.speed * 0.7 + p.phase) * floatAmp;
-      positions[i * 3 + 2] = p.current.z + p.repel.z;
+      fgPositions[j * 3] = p.current.x + p.repel.x + Math.sin(t * p.speed + p.phase) * 0.015;
+      fgPositions[j * 3 + 1] = p.current.y + p.repel.y + Math.cos(t * p.speed * 0.7 + p.phase) * 0.015;
+      fgPositions[j * 3 + 2] = p.current.z + p.repel.z;
 
-      colors[i * 3] = p.color.r;
-      colors[i * 3 + 1] = p.color.g;
-      colors[i * 3 + 2] = p.color.b;
+      fgColors[j * 3] = p.color.r;
+      fgColors[j * 3 + 1] = p.color.g;
+      fgColors[j * 3 + 2] = p.color.b;
     }
-
-    positionAttr.needsUpdate = true;
-    colorAttr.needsUpdate = true;
-
-    if (groupRef.current && activeSection === 1) {
-      groupRef.current.rotation.y += delta * 0.12;
-    }
+    fgPositionAttr.needsUpdate = true;
+    fgColorAttr.needsUpdate = true;
   });
 
   return (
@@ -375,21 +465,40 @@ function ParticleMorphSystem({ activeSection, count }) {
       <points>
         <bufferGeometry>
           <bufferAttribute
-            ref={positionAttrRef}
+            ref={bgPositionAttrRef}
             attach="attributes-position"
-            count={count}
-            array={positions}
+            count={bgCount}
+            array={bgPositions}
             itemSize={3}
           />
           <bufferAttribute
-            ref={colorAttrRef}
+            ref={bgColorAttrRef}
             attach="attributes-color"
-            count={count}
-            array={colors}
+            count={bgCount}
+            array={bgColors}
             itemSize={3}
           />
         </bufferGeometry>
-        <pointsMaterial vertexColors transparent opacity={0.95} size={0.12} sizeAttenuation />
+        <pointsMaterial vertexColors transparent opacity={0.25} size={0.05} sizeAttenuation depthWrite={false} />
+      </points>
+      <points>
+        <bufferGeometry>
+          <bufferAttribute
+            ref={fgPositionAttrRef}
+            attach="attributes-position"
+            count={fgCount}
+            array={fgPositions}
+            itemSize={3}
+          />
+          <bufferAttribute
+            ref={fgColorAttrRef}
+            attach="attributes-color"
+            count={fgCount}
+            array={fgColors}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial vertexColors transparent opacity={0.9} size={0.13} sizeAttenuation />
       </points>
     </group>
   );

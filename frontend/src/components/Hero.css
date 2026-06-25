@@ -23,6 +23,7 @@
   padding: 0 24px;
   position: relative;
   z-index: 10;
+  isolation: isolate;
 }
 
 /* ── Icon ── */
@@ -69,6 +70,9 @@
   transform-style: preserve-3d;
   will-change: transform;
   transition: transform 0.08s ease-out;
+  text-shadow:
+    0 0 40px rgba(3, 0, 20, 0.9),
+    0 2px 20px rgba(3, 0, 20, 0.7);
 }
 
 .hero-accent {
@@ -87,6 +91,7 @@
   max-width: 460px;
   margin: 0 0 32px;
   font-weight: 400;
+  text-shadow: 0 0 20px rgba(3, 0, 20, 0.95);
 }
 
 /* ── Buttons ── */
