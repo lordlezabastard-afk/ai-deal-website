@@ -171,96 +171,94 @@ function generateBrain(count) {
 function generateHandshake(count) {
   const positions = [];
   const rand = seededRandom(13);
-
-  const cx = 1.5;
+  const cx = 1.4; // центр по X (правая половина экрана)
   const cy = 0.0;
 
-  const leftCount = Math.floor(count * 0.44);
-  const rightCount = Math.floor(count * 0.44);
-  const gripCount = count - leftCount - rightCount;
-
-  // Вспомогательная функция — трубка вдоль отрезка с заданным радиусом
-  function tube(x0, y0, x1, y1, radius, n) {
+  // Заполнить отрезок частицами
+  function segment(x0, y0, x1, y1, thickness, n) {
+    const dx = x1 - x0, dy = y1 - y0;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const px = -dy / len, py = dx / len; // перпендикуляр
     for (let i = 0; i < n; i++) {
-      const t = i / n;
-      const bx = x0 + (x1 - x0) * t;
-      const by = y0 + (y1 - y0) * t;
-      // Перпендикуляр к направлению трубки
-      const dx = x1 - x0;
-      const dy = y1 - y0;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const nx = -dy / len;
-      const ny = dx / len;
-      const r = (rand() * 2 - 1) * radius;
-      const jitter = rand() * 0.04;
+      const t = rand();
+      const r = (rand() * 2 - 1) * thickness;
       positions.push(new THREE.Vector3(
-        cx + bx + nx * r + (rand() - 0.5) * jitter,
-        cy + by + ny * r + (rand() - 0.5) * jitter,
-        (rand() - 0.5) * radius * 1.2
+        cx + x0 + dx * t + px * r + (rand() - 0.5) * 0.02,
+        cy + y0 + dy * t + py * r + (rand() - 0.5) * 0.02,
+        (rand() - 0.5) * thickness * 0.8
       ));
     }
   }
 
-  // Вспомогательная функция — палец (тонкая трубка)
-  function finger(x0, y0, x1, y1, n) {
-    tube(x0, y0, x1, y1, 0.055, n);
+  // Заполнить эллипс частицами
+  function ellipse(ex, ey, rx, ry, n) {
+    for (let i = 0; i < n; i++) {
+      const angle = rand() * Math.PI * 2;
+      const r = Math.sqrt(rand());
+      positions.push(new THREE.Vector3(
+        cx + ex + Math.cos(angle) * rx * r + (rand() - 0.5) * 0.03,
+        cy + ey + Math.sin(angle) * ry * r + (rand() - 0.5) * 0.03,
+        (rand() - 0.5) * 0.12
+      ));
+    }
   }
 
-  // ── ЛЕВАЯ РУКА (снизу-слева → вверх-вправо) ──
+  const n = count;
 
-  // Предплечье — широкая трубка
-  tube(-2.0, -1.3, -0.55, -0.18, 0.14, Math.floor(leftCount * 0.30));
+  // ═══ ЛЕВАЯ РУКА — идёт снизу-слева вверх-вправо ═══
 
-  // Ладонь — шире предплечья
-  tube(-0.55, -0.18, -0.05, 0.05, 0.20, Math.floor(leftCount * 0.20));
+  // Предплечье левой руки
+  segment(-2.1, -1.4, -0.6, -0.2, 0.15, Math.floor(n * 0.12));
 
-  // Большой палец — вниз-вправо от ладони
-  finger(-0.3, -0.22, 0.05, -0.48, Math.floor(leftCount * 0.08));
+  // Ладонь левой руки
+  ellipse(-0.35, -0.05, 0.22, 0.18, Math.floor(n * 0.08));
 
-  // 4 пальца веером вправо-вверх
-  finger(-0.05, 0.05, 0.38, 0.32, Math.floor(leftCount * 0.10));
-  finger(-0.05, 0.05, 0.44, 0.18, Math.floor(leftCount * 0.10));
-  finger(-0.05, 0.05, 0.43, 0.03, Math.floor(leftCount * 0.10));
-  finger(-0.05, 0.05, 0.36, -0.11, Math.floor(leftCount * 0.08));
+  // Большой палец — вниз-вправо
+  segment(-0.2, -0.12, 0.08, -0.42, 0.06, Math.floor(n * 0.05));
 
-  // Добить остаток в ладонь
-  const lUsed = Math.floor(leftCount * (0.30 + 0.20 + 0.08 + 0.10 + 0.10 + 0.10 + 0.08));
-  tube(-0.4, -0.1, -0.1, 0.0, 0.17, leftCount - lUsed);
+  // Указательный палец — вправо-вверх
+  segment(-0.15, 0.10, 0.28, 0.36, 0.055, Math.floor(n * 0.05));
 
-  // ── ПРАВАЯ РУКА (сверху-справа → вниз-влево) — зеркально ──
+  // Средний палец — вправо-вверх (чуть длиннее)
+  segment(-0.10, 0.08, 0.34, 0.28, 0.055, Math.floor(n * 0.05));
 
-  // Предплечье
-  tube(2.0, 1.3, 0.55, 0.18, 0.14, Math.floor(rightCount * 0.30));
+  // Безымянный палец
+  segment(-0.08, 0.05, 0.32, 0.12, 0.055, Math.floor(n * 0.04));
 
-  // Ладонь
-  tube(0.55, 0.18, 0.05, -0.05, 0.20, Math.floor(rightCount * 0.20));
+  // Мизинец — вправо почти горизонтально
+  segment(-0.08, 0.02, 0.28, -0.06, 0.05, Math.floor(n * 0.04));
 
-  // Большой палец — вверх-влево от ладони
-  finger(0.3, 0.22, -0.05, 0.48, Math.floor(rightCount * 0.08));
+  // ═══ ПРАВАЯ РУКА — зеркально, идёт сверху-справа вниз-влево ═══
 
-  // 4 пальца веером влево-вниз
-  finger(0.05, -0.05, -0.38, -0.32, Math.floor(rightCount * 0.10));
-  finger(0.05, -0.05, -0.44, -0.18, Math.floor(rightCount * 0.10));
-  finger(0.05, -0.05, -0.43, -0.03, Math.floor(rightCount * 0.10));
-  finger(0.05, -0.05, -0.36, 0.11, Math.floor(rightCount * 0.08));
+  // Предплечье правой руки
+  segment(2.1, 1.4, 0.6, 0.2, 0.15, Math.floor(n * 0.12));
+
+  // Ладонь правой руки
+  ellipse(0.35, 0.05, 0.22, 0.18, Math.floor(n * 0.08));
+
+  // Большой палец — вверх-влево
+  segment(0.2, 0.12, -0.08, 0.42, 0.06, Math.floor(n * 0.05));
+
+  // Указательный палец — влево-вниз
+  segment(0.15, -0.10, -0.28, -0.36, 0.055, Math.floor(n * 0.05));
+
+  // Средний палец
+  segment(0.10, -0.08, -0.34, -0.28, 0.055, Math.floor(n * 0.05));
+
+  // Безымянный палец
+  segment(0.08, -0.05, -0.32, -0.12, 0.055, Math.floor(n * 0.04));
+
+  // Мизинец
+  segment(0.08, -0.02, -0.28, 0.06, 0.05, Math.floor(n * 0.04));
+
+  // ═══ ЗОНА СЦЕПЛЕНИЯ — плотный центр ═══
+  ellipse(0, 0, 0.20, 0.16, Math.floor(n * 0.10));
 
   // Добить остаток
-  const rUsed = Math.floor(rightCount * (0.30 + 0.20 + 0.08 + 0.10 + 0.10 + 0.10 + 0.08));
-  tube(0.4, 0.1, 0.1, 0.0, 0.17, rightCount - rUsed);
-
-  // ── ЗОНА СЦЕПЛЕНИЯ — плотное скопление в центре ──
-  for (let i = 0; i < gripCount; i++) {
-    const angle = rand() * Math.PI * 2;
-    const r = rand() * rand() * 0.25;
-    positions.push(new THREE.Vector3(
-      cx + Math.cos(angle) * r * 1.0,
-      cy + Math.sin(angle) * r * 0.7,
-      (rand() - 0.5) * 0.15
-    ));
-  }
-
   while (positions.length < count) {
-    positions.push(positions[positions.length % Math.max(1, positions.length - 1)].clone());
+    positions.push(
+      positions[positions.length % Math.max(1, positions.length - 1)].clone()
+    );
   }
   return positions.slice(0, count);
 }
