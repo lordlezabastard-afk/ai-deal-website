@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuthModal } from "../context/AuthModalContext";
 import { useAuth } from "../context/AuthContext";
 import ParticleScene from "./ParticleScene";
-import { AnimatedLetters, AnimatedBlock } from "./AnimatedText";
+import { AnimatedBlock } from "./AnimatedText";
 import { useMagnet } from "../hooks/useMagnet";
 import "./Hero.css";
 
@@ -159,39 +159,38 @@ function Hero() {
                 <span className="hero__badge">{section.badge}</span>
               </AnimatedBlock>
 
-              <div
-                className="hero__title-wrap"
-                ref={(el) => (titleRefs.current[i] = el)}
-                onMouseMove={(e) => {
-                  const wrap = titleRefs.current[i];
-                  if (!wrap) return;
-                  const r = wrap.getBoundingClientRect();
-                  const mx = (e.clientX - r.left) / r.width - 0.5;
-                  const my = (e.clientY - r.top) / r.height - 0.5;
-                  const h1 = wrap.querySelector("h1");
-                  if (h1) h1.style.transform = `rotateY(${mx * 22}deg) rotateX(${-my * 14}deg)`;
-                }}
-                onMouseLeave={() => {
-                  const wrap = titleRefs.current[i];
-                  const h1 = wrap?.querySelector("h1");
-                  if (h1) h1.style.transform = "rotateY(0deg) rotateX(0deg)";
-                }}
-              >
-                <h1 className="hero__title">
-                  {section.titleParts.map((part, idx) =>
-                    part.highlight ? (
-                      <AnimatedLetters
-                        key={idx}
-                        text={part.text}
-                        className="hero-accent"
-                        delay={0.1 + idx * 0.05}
-                      />
-                    ) : (
-                      <AnimatedLetters key={idx} text={part.text} delay={idx * 0.05} />
-                    )
-                  )}
-                </h1>
-              </div>
+              <AnimatedBlock delay={0.1}>
+                <div
+                  className="hero__title-wrap"
+                  ref={(el) => (titleRefs.current[i] = el)}
+                  onMouseMove={(e) => {
+                    const wrap = titleRefs.current[i];
+                    if (!wrap) return;
+                    const r = wrap.getBoundingClientRect();
+                    const mx = (e.clientX - r.left) / r.width - 0.5;
+                    const my = (e.clientY - r.top) / r.height - 0.5;
+                    const h1 = wrap.querySelector("h1");
+                    if (h1) h1.style.transform = `rotateY(${mx * 22}deg) rotateX(${-my * 14}deg)`;
+                  }}
+                  onMouseLeave={() => {
+                    const wrap = titleRefs.current[i];
+                    const h1 = wrap?.querySelector("h1");
+                    if (h1) h1.style.transform = "rotateY(0deg) rotateX(0deg)";
+                  }}
+                >
+                  <h1 className="hero__title">
+                    {section.titleParts.map((part, idx) =>
+                      part.highlight ? (
+                        <span key={idx} className="hero-accent">
+                          {part.text}
+                        </span>
+                      ) : (
+                        <span key={idx}>{part.text}</span>
+                      )
+                    )}
+                  </h1>
+                </div>
+              </AnimatedBlock>
 
               <AnimatedBlock delay={0.4}>
                 <p className="hero__subtitle">{section.subtitle}</p>
