@@ -171,28 +171,9 @@ function generateBrain(count) {
 function generateHandshake(count) {
   const positions = [];
   const rand = seededRandom(13);
-  const cx = 1.4;
-  const cy = 0.05;
+  const cx = 1.5;
+  const cy = 0.1;
 
-  // Заполнить отрезок (трубка с thickness)
-  function seg(x0, y0, x1, y1, thickness, n) {
-    const dx = x1 - x0, dy = y1 - y0;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const px = -dy / len, py = dx / len;
-    for (let i = 0; i < n; i++) {
-      const t = rand();
-      const r = (rand() * 2 - 1) * thickness;
-      const jx = (rand() - 0.5) * 0.025;
-      const jy = (rand() - 0.5) * 0.025;
-      positions.push(new THREE.Vector3(
-        cx + x0 + dx * t + px * r + jx,
-        cy + y0 + dy * t + py * r + jy,
-        (rand() - 0.5) * Math.max(thickness, 0.06)
-      ));
-    }
-  }
-
-  // Заполнить эллипс
   function ell(ex, ey, rx, ry, n) {
     for (let i = 0; i < n; i++) {
       const a = rand() * Math.PI * 2;
@@ -200,6 +181,33 @@ function generateHandshake(count) {
       positions.push(new THREE.Vector3(
         cx + ex + Math.cos(a) * rx * r + (rand() - 0.5) * 0.02,
         cy + ey + Math.sin(a) * ry * r + (rand() - 0.5) * 0.02,
+        (rand() - 0.5) * 0.15
+      ));
+    }
+  }
+
+  function arc(ex, ey, rx, ry, fromAngle, toAngle, thickness, n) {
+    for (let i = 0; i < n; i++) {
+      const a = fromAngle + rand() * (toAngle - fromAngle);
+      const r = 1 + (rand() - 0.5) * thickness;
+      positions.push(new THREE.Vector3(
+        cx + ex + Math.cos(a) * rx * r + (rand() - 0.5) * 0.02,
+        cy + ey + Math.sin(a) * ry * r + (rand() - 0.5) * 0.02,
+        (rand() - 0.5) * 0.12
+      ));
+    }
+  }
+
+  function seg(x0, y0, x1, y1, thickness, n) {
+    const dx = x1 - x0, dy = y1 - y0;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const px = -dy / len, py = dx / len;
+    for (let i = 0; i < n; i++) {
+      const t = rand();
+      const r = (rand() * 2 - 1) * thickness;
+      positions.push(new THREE.Vector3(
+        cx + x0 + dx * t + px * r + (rand() - 0.5) * 0.02,
+        cy + y0 + dy * t + py * r + (rand() - 0.5) * 0.02,
         (rand() - 0.5) * 0.10
       ));
     }
@@ -207,58 +215,54 @@ function generateHandshake(count) {
 
   const N = count;
 
-  // ══════════════════════════════════════════
-  // ЛЕВАЯ РУКА — приходит снизу-слева
-  // ══════════════════════════════════════════
+  // ── КУПОЛ ЛАМПОЧКИ — верхняя круглая часть ──
+  // Верхняя полусфера (180° → 360° = верх)
+  arc(0, 0.2, 0.85, 0.85, Math.PI, Math.PI * 2, 0.08, Math.floor(N * 0.18));
 
-  // Предплечье: толстое, диагональ снизу-слева к центру
-  seg(-2.0, -1.3, -0.4, -0.15, 0.18, Math.floor(N * 0.11));
+  // Нижняя часть купола — более пологая (сужается к цоколю)
+  arc(0, 0.2, 0.85, 0.60, 0, Math.PI, 0.07, Math.floor(N * 0.10));
 
-  // Ладонь левой руки — широкий эллипс в центре-снизу
-  ell(-0.18, -0.08, 0.26, 0.20, Math.floor(N * 0.09));
+  // Внутреннее свечение купола — заполнение
+  ell(0, 0.4, 0.55, 0.55, Math.floor(N * 0.12));
 
-  // Большой палец левой — торчит ВНИЗ-вправо (как на фото)
-  seg(-0.05, -0.18, 0.22, -0.52, 0.065, Math.floor(N * 0.05));
+  // ── НИТЬ НАКАЛИВАНИЯ — внутри лампочки, W-образная ──
+  seg(-0.20, 0.30, -0.08, 0.65, 0.025, Math.floor(N * 0.03));
+  seg(-0.08, 0.65, 0.00, 0.40, 0.025, Math.floor(N * 0.03));
+  seg(0.00, 0.40, 0.08, 0.65, 0.025, Math.floor(N * 0.03));
+  seg(0.08, 0.65, 0.20, 0.30, 0.025, Math.floor(N * 0.03));
 
-  // 4 пальца левой руки — загнуты вправо-вверх и охватывают правую руку
-  // Указательный
-  seg(0.05, 0.14, 0.38, 0.44, 0.055, Math.floor(N * 0.045));
-  // Средний
-  seg(0.08, 0.10, 0.45, 0.34, 0.055, Math.floor(N * 0.045));
-  // Безымянный
-  seg(0.10, 0.04, 0.44, 0.18, 0.050, Math.floor(N * 0.04));
-  // Мизинец
-  seg(0.10, -0.02, 0.40, 0.04, 0.045, Math.floor(N * 0.035));
+  // ── ЮБКА ЛАМПОЧКИ — переход от купола к цоколю ──
+  seg(-0.85, -0.25, -0.30, -0.45, 0.05, Math.floor(N * 0.05));
+  seg(0.85, -0.25, 0.30, -0.45, 0.05, Math.floor(N * 0.05));
 
-  // ══════════════════════════════════════════
-  // ПРАВАЯ РУКА — приходит сверху-справа
-  // ══════════════════════════════════════════
+  // ── ЦОКОЛЬ — три горизонтальные полосы ──
+  // Верхняя полоса цоколя
+  seg(-0.30, -0.45, 0.30, -0.45, 0.04, Math.floor(N * 0.05));
+  // Средняя полоса
+  seg(-0.28, -0.62, 0.28, -0.62, 0.04, Math.floor(N * 0.05));
+  // Нижняя полоса
+  seg(-0.25, -0.78, 0.25, -0.78, 0.04, Math.floor(N * 0.04));
 
-  // Предплечье: диагональ сверху-справа к центру
-  seg(2.0, 1.3, 0.4, 0.15, 0.16, Math.floor(N * 0.11));
+  // Боковые стенки цоколя
+  seg(-0.30, -0.45, -0.25, -0.78, 0.03, Math.floor(N * 0.03));
+  seg(0.30, -0.45, 0.25, -0.78, 0.03, Math.floor(N * 0.03));
 
-  // Ладонь правой руки — эллипс в центре-сверху
-  ell(0.18, 0.10, 0.24, 0.18, Math.floor(N * 0.09));
+  // ── ЛУЧИ СВЕТА — расходятся от купола ──
+  // 8 лучей во все стороны
+  const rayAngles = [0, 45, 90, 135, 180, 225, 270, 315].map((d) => (d * Math.PI) / 180);
+  rayAngles.forEach((a) => {
+    const startR = 0.92;
+    const endR = 1.35;
+    seg(
+      Math.cos(a) * startR,
+      0.2 + Math.sin(a) * startR * 0.85,
+      Math.cos(a) * endR,
+      0.2 + Math.sin(a) * endR * 0.85,
+      0.02,
+      Math.floor(N * 0.012)
+    );
+  });
 
-  // Большой палец правой — торчит ВВЕРХ-влево (зеркально)
-  seg(0.05, 0.20, -0.22, 0.54, 0.065, Math.floor(N * 0.05));
-
-  // 4 пальца правой руки — загнуты влево-вниз и охватывают левую руку
-  // Указательный
-  seg(-0.05, -0.14, -0.38, -0.44, 0.055, Math.floor(N * 0.045));
-  // Средний
-  seg(-0.08, -0.10, -0.45, -0.34, 0.055, Math.floor(N * 0.045));
-  // Безымянный
-  seg(-0.10, -0.04, -0.44, -0.18, 0.050, Math.floor(N * 0.04));
-  // Мизинец
-  seg(-0.10, 0.02, -0.40, -0.04, 0.045, Math.floor(N * 0.035));
-
-  // ══════════════════════════════════════════
-  // ЗОНА СЦЕПЛЕНИЯ — самая плотная часть
-  // ══════════════════════════════════════════
-  ell(0, 0, 0.18, 0.14, Math.floor(N * 0.09));
-
-  // Добить остаток
   while (positions.length < count) {
     positions.push(
       positions[positions.length % Math.max(1, positions.length - 1)].clone()
