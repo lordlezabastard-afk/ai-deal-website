@@ -12,6 +12,38 @@ const REPEL_STRENGTH = 0.35;   // было 0.15 — сильнее толкае�
 const CAMERA_PARALLAX_X = 0.6;
 const CAMERA_PARALLAX_Y = 0.35;
 
+// Points рендерят квадратные спрайты — форму (круг/треугольник) задаём
+// alpha-текстурой на canvas, а не геометрией (геометрию пришлось бы менять
+// через instancedMesh, который ломает instanceColor — см. комментарий ниже).
+function createCircleTexture() {
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  return new THREE.CanvasTexture(canvas);
+}
+
+function createTriangleTexture() {
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.beginPath();
+  ctx.moveTo(size / 2, 2);
+  ctx.lineTo(size - 2, size - 2);
+  ctx.lineTo(2, size - 2);
+  ctx.closePath();
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  return new THREE.CanvasTexture(canvas);
+}
+
 function seededRandom(seed) {
   let s = seed;
   return function next() {
@@ -278,6 +310,8 @@ function ParticleMorphSystem({ activeSection, count }) {
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), []);
   const intersectPoint = useMemo(() => new THREE.Vector3(), []);
+  const bgSpriteTexture = useMemo(() => createTriangleTexture(), []);
+  const fgSpriteTexture = useMemo(() => createCircleTexture(), []);
 
   const bgCount = Math.floor(count * BG_RATIO);
   const fgCount = count - bgCount;
@@ -479,7 +513,16 @@ function ParticleMorphSystem({ activeSection, count }) {
             itemSize={3}
           />
         </bufferGeometry>
-        <pointsMaterial vertexColors transparent opacity={0.25} size={0.05} sizeAttenuation depthWrite={false} />
+        <pointsMaterial
+          vertexColors
+          transparent
+          opacity={0.25}
+          size={0.05}
+          sizeAttenuation
+          depthWrite={false}
+          map={bgSpriteTexture}
+          alphaTest={0.4}
+        />
       </points>
       <points>
         <bufferGeometry>
@@ -498,7 +541,15 @@ function ParticleMorphSystem({ activeSection, count }) {
             itemSize={3}
           />
         </bufferGeometry>
-        <pointsMaterial vertexColors transparent opacity={0.9} size={0.13} sizeAttenuation />
+        <pointsMaterial
+          vertexColors
+          transparent
+          opacity={0.9}
+          size={0.13}
+          sizeAttenuation
+          map={fgSpriteTexture}
+          alphaTest={0.4}
+        />
       </points>
     </group>
   );
