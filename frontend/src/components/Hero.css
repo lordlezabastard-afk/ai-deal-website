@@ -11,7 +11,7 @@
   justify-content: flex-start;
   scroll-snap-align: start;
   position: relative;
-  padding-left: 5vw;
+  padding-left: 18vw;
 }
 
 /* ── Content block — левая половина экрана, объекты остаются справа ── */
@@ -20,8 +20,8 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-width: 480px;
-  padding: 0 24px;
+  max-width: 380px;
+  padding: 0 16px;
   position: relative;
   z-index: 10;
   isolation: isolate;
