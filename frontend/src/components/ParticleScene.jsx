@@ -174,26 +174,14 @@ function generateHandshake(count) {
   const cx = 1.5;
   const cy = 0.1;
 
-  function ell(ex, ey, rx, ry, n) {
-    for (let i = 0; i < n; i++) {
-      const a = rand() * Math.PI * 2;
-      const r = Math.sqrt(rand());
-      positions.push(new THREE.Vector3(
-        cx + ex + Math.cos(a) * rx * r + (rand() - 0.5) * 0.02,
-        cy + ey + Math.sin(a) * ry * r + (rand() - 0.5) * 0.02,
-        (rand() - 0.5) * 0.15
-      ));
-    }
-  }
-
   function arc(ex, ey, rx, ry, fromAngle, toAngle, thickness, n) {
     for (let i = 0; i < n; i++) {
-      const a = fromAngle + rand() * (toAngle - fromAngle);
+      const a = fromAngle + (i / n) * (toAngle - fromAngle);
       const r = 1 + (rand() - 0.5) * thickness;
       positions.push(new THREE.Vector3(
-        cx + ex + Math.cos(a) * rx * r + (rand() - 0.5) * 0.02,
-        cy + ey + Math.sin(a) * ry * r + (rand() - 0.5) * 0.02,
-        (rand() - 0.5) * 0.12
+        cx + ex + Math.cos(a) * rx * r + (rand() - 0.5) * 0.015,
+        cy + ey + Math.sin(a) * ry * r + (rand() - 0.5) * 0.015,
+        (rand() - 0.5) * 0.08
       ));
     }
   }
@@ -203,63 +191,51 @@ function generateHandshake(count) {
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
     const px = -dy / len, py = dx / len;
     for (let i = 0; i < n; i++) {
-      const t = rand();
+      const t = i / n;
       const r = (rand() * 2 - 1) * thickness;
       positions.push(new THREE.Vector3(
-        cx + x0 + dx * t + px * r + (rand() - 0.5) * 0.02,
-        cy + y0 + dy * t + py * r + (rand() - 0.5) * 0.02,
-        (rand() - 0.5) * 0.10
+        cx + x0 + dx * t + px * r + (rand() - 0.5) * 0.015,
+        cy + y0 + dy * t + py * r + (rand() - 0.5) * 0.015,
+        (rand() - 0.5) * 0.08
       ));
     }
   }
 
   const N = count;
 
-  // ── КУПОЛ ЛАМПОЧКИ — верхняя круглая часть ──
-  // Верхняя полусфера (180° → 360° = верх)
-  arc(0, 0.2, 0.85, 0.85, Math.PI, Math.PI * 2, 0.08, Math.floor(N * 0.18));
+  // ── КУПОЛ — плотный контур окружности ──
+  arc(0, 0.2, 0.90, 0.90, Math.PI, Math.PI * 2, 0.04, Math.floor(N * 0.22));
+  arc(0, 0.2, 0.90, 0.65, 0, Math.PI, 0.04, Math.floor(N * 0.14));
 
-  // Нижняя часть купола — более пологая (сужается к цоколю)
-  arc(0, 0.2, 0.85, 0.60, 0, Math.PI, 0.07, Math.floor(N * 0.10));
+  // ── НИТЬ НАКАЛИВАНИЯ — W внутри купола ──
+  seg(-0.22, 0.22, -0.08, 0.62, 0.022, Math.floor(N * 0.05));
+  seg(-0.08, 0.62, 0.00, 0.35, 0.022, Math.floor(N * 0.04));
+  seg(0.00, 0.35, 0.08, 0.62, 0.022, Math.floor(N * 0.04));
+  seg(0.08, 0.62, 0.22, 0.22, 0.022, Math.floor(N * 0.05));
+  // Две вертикальные ножки нити
+  seg(-0.22, 0.22, -0.22, -0.10, 0.018, Math.floor(N * 0.03));
+  seg(0.22, 0.22, 0.22, -0.10, 0.018, Math.floor(N * 0.03));
 
-  // Внутреннее свечение купола — заполнение
-  ell(0, 0.4, 0.55, 0.55, Math.floor(N * 0.12));
+  // ── ЮБКА — сужение от купола к цоколю ──
+  seg(-0.90, -0.25, -0.32, -0.48, 0.03, Math.floor(N * 0.05));
+  seg(0.90, -0.25, 0.32, -0.48, 0.03, Math.floor(N * 0.05));
 
-  // ── НИТЬ НАКАЛИВАНИЯ — внутри лампочки, W-образная ──
-  seg(-0.20, 0.30, -0.08, 0.65, 0.025, Math.floor(N * 0.03));
-  seg(-0.08, 0.65, 0.00, 0.40, 0.025, Math.floor(N * 0.03));
-  seg(0.00, 0.40, 0.08, 0.65, 0.025, Math.floor(N * 0.03));
-  seg(0.08, 0.65, 0.20, 0.30, 0.025, Math.floor(N * 0.03));
-
-  // ── ЮБКА ЛАМПОЧКИ — переход от купола к цоколю ──
-  seg(-0.85, -0.25, -0.30, -0.45, 0.05, Math.floor(N * 0.05));
-  seg(0.85, -0.25, 0.30, -0.45, 0.05, Math.floor(N * 0.05));
-
-  // ── ЦОКОЛЬ — три горизонтальные полосы ──
-  // Верхняя полоса цоколя
-  seg(-0.30, -0.45, 0.30, -0.45, 0.04, Math.floor(N * 0.05));
-  // Средняя полоса
-  seg(-0.28, -0.62, 0.28, -0.62, 0.04, Math.floor(N * 0.05));
-  // Нижняя полоса
-  seg(-0.25, -0.78, 0.25, -0.78, 0.04, Math.floor(N * 0.04));
-
+  // ── ЦОКОЛЬ — три чёткие горизонтальные полосы ──
+  seg(-0.32, -0.48, 0.32, -0.48, 0.025, Math.floor(N * 0.05));
+  seg(-0.29, -0.64, 0.29, -0.64, 0.025, Math.floor(N * 0.05));
+  seg(-0.26, -0.80, 0.26, -0.80, 0.025, Math.floor(N * 0.04));
   // Боковые стенки цоколя
-  seg(-0.30, -0.45, -0.25, -0.78, 0.03, Math.floor(N * 0.03));
-  seg(0.30, -0.45, 0.25, -0.78, 0.03, Math.floor(N * 0.03));
+  seg(-0.32, -0.48, -0.26, -0.80, 0.020, Math.floor(N * 0.03));
+  seg(0.32, -0.48, 0.26, -0.80, 0.020, Math.floor(N * 0.03));
 
-  // ── ЛУЧИ СВЕТА — расходятся от купола ──
-  // 8 лучей во все стороны
-  const rayAngles = [0, 45, 90, 135, 180, 225, 270, 315].map((d) => (d * Math.PI) / 180);
-  rayAngles.forEach((a) => {
-    const startR = 0.92;
-    const endR = 1.35;
+  // ── ЛУЧИ — 6 коротких лучей от купола ──
+  [30, 90, 150, 210, 270, 330].forEach((deg) => {
+    const a = (deg * Math.PI) / 180;
+    const r1 = 0.95, r2 = 1.30;
     seg(
-      Math.cos(a) * startR,
-      0.2 + Math.sin(a) * startR * 0.85,
-      Math.cos(a) * endR,
-      0.2 + Math.sin(a) * endR * 0.85,
-      0.02,
-      Math.floor(N * 0.012)
+      Math.cos(a) * r1, 0.2 + Math.sin(a) * r1 * 0.85,
+      Math.cos(a) * r2, 0.2 + Math.sin(a) * r2 * 0.85,
+      0.018, Math.floor(N * 0.008)
     );
   });
 

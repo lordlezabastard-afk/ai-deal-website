@@ -202,12 +202,7 @@ function Hero() {
                     <MagnetBtn className="btn btn--primary">{section.primaryBtn.label}</MagnetBtn>
                   )}
                   <MagnetBtn className="btn btn--ghost">{section.secondaryBtn.label}</MagnetBtn>
-                </div>
-              </AnimatedBlock>
-
-              {!isAuthenticated && (
-                <AnimatedBlock delay={0.65}>
-                  <div className="hero__cta">
+                  {!isAuthenticated && (
                     <MagnetBtn
                       type="button"
                       className="hero__cta-btn beam-btn"
@@ -215,9 +210,9 @@ function Hero() {
                     >
                       РЕГИСТРАЦИЯ
                     </MagnetBtn>
-                  </div>
-                </AnimatedBlock>
-              )}
+                  )}
+                </div>
+              </AnimatedBlock>
             </div>
           </section>
         ))}

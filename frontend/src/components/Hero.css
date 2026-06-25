@@ -143,10 +143,6 @@
 }
 
 /* ── CTA beam-btn (регистрация) ── */
-.hero__cta {
-  margin-top: 16px;
-}
-
 .hero__cta-btn {
   background: transparent;
   color: var(--color-lavender-accent, #9382ff);
