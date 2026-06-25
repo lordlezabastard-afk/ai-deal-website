@@ -1,0 +1,271 @@
+/* ── Overlay ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ── Card ── */
+.modal-card {
+  background: #111118;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ── Close button ── */
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #3a3850;
+  cursor: pointer;
+  line-height: 0;
+  padding: 4px;
+  transition: color 0.15s;
+}
+.modal-close:hover { color: #f4f0ff; }
+
+/* ── Logo ── */
+.modal-logo {
+  width: 44px;
+  height: 44px;
+  background: #5046e4;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  font-family: var(--font-sans);
+  letter-spacing: -0.5px;
+}
+
+/* ── Badge ── */
+.modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(80, 70, 228, 0.12);
+  border: 0.5px solid rgba(80, 70, 228, 0.25);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #9382ff;
+  margin: 0 auto 16px;
+  width: fit-content;
+}
+.modal-badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #9382ff;
+  flex-shrink: 0;
+}
+
+/* ── Typography ── */
+.modal-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #f4f0ff;
+  text-align: center;
+  margin-bottom: 4px;
+  font-family: var(--font-sans);
+}
+.modal-sub {
+  font-size: 13px;
+  color: #54525f;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* ── Fields ── */
+.modal-field { margin-bottom: 14px; }
+.modal-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #918ea0;
+  margin-bottom: 5px;
+  display: block;
+}
+.modal-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.modal-forgot {
+  font-size: 12px;
+  color: #5046e4;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  padding: 0;
+}
+.modal-forgot:hover { color: #7b6ff0; }
+
+/* ── Input ── */
+.modal-inp {
+  width: 100%;
+  background: #0d0d1a;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 40px 10px 14px;
+  font-size: 14px;
+  color: #f4f0ff;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.modal-inp:focus { border-color: #5046e4; }
+.modal-inp::placeholder { color: #2e2c3e; }
+.modal-inp--ok { border-color: #15846e !important; }
+.modal-inp--error { border-color: #e24b4a !important; }
+
+/* ── Password wrapper ── */
+.modal-pw-wrap { position: relative; display: flex; align-items: center; }
+.modal-pw-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #3a3850;
+  cursor: pointer;
+  background: none;
+  border: none;
+  line-height: 0;
+  padding: 0;
+  transition: color 0.15s;
+}
+.modal-pw-eye:hover { color: #918ea0; }
+
+/* ── Password strength ── */
+.modal-strength {
+  display: flex;
+  gap: 3px;
+  margin-top: 5px;
+}
+.modal-bar {
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: #1a1a2e;
+  transition: background 0.2s;
+}
+.modal-bar--weak   { background: #e24b4a; }
+.modal-bar--mid    { background: #ffb829; }
+.modal-bar--strong { background: #15846e; }
+
+/* ── Match hint ── */
+.modal-match-hint {
+  font-size: 11px;
+  margin-top: 4px;
+}
+.modal-match-hint--ok    { color: #15846e; }
+.modal-match-hint--error { color: #e24b4a; }
+
+/* ── Error message ── */
+.modal-error {
+  font-size: 12px;
+  color: #e24b4a;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+/* ── Primary button ── */
+.modal-btn-primary {
+  width: 100%;
+  background: #5046e4;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  margin-top: 4px;
+}
+.modal-btn-primary:hover:not(:disabled) { background: #6357f0; }
+.modal-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Divider ── */
+.modal-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0;
+}
+.modal-divider::before,
+.modal-divider::after {
+  content: '';
+  flex: 1;
+  height: 0.5px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.modal-divider span {
+  font-size: 12px;
+  color: #3a3850;
+  white-space: nowrap;
+}
+
+/* ── Telegram button ── */
+.modal-btn-tg {
+  width: 100%;
+  background: transparent;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #f4f0ff;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.modal-btn-tg:hover {
+  border-color: rgba(41, 182, 246, 0.4);
+  background: rgba(41, 182, 246, 0.06);
+  color: #29b6f6;
+}
+
+/* ── Footer ── */
+.modal-footer {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 13px;
+  color: #3a3850;
+}
+.modal-link {
+  color: #5046e4;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 0;
+}
+.modal-link:hover { color: #7b6ff0; }

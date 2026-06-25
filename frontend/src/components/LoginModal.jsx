@@ -1,103 +1,134 @@
 import { useEffect, useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import "./LoginModal.css";
+import "./Modal.css";
 
-const EMPTY_FORM = { email: "", password: "" };
+function handleTelegramLogin() {
+  console.log("Telegram login");
+}
+
+function handleForgot() {
+  console.log("Forgot password");
+}
 
 function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   const { login } = useAuth();
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [errors, setErrors] = useState({});
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [status, setStatus] = useState("idle");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
-    setForm(EMPTY_FORM);
-    setErrors({});
+    setEmail("");
+    setPassword("");
     setShowPassword(false);
-    setStatus("idle");
+    setLoading(false);
+    setError("");
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleChange = (field) => (e) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setErrors({});
-    setStatus("loading");
+    setError("");
+    setLoading(true);
 
     try {
-      await login(form.email, form.password);
+      await login(email, password);
       onClose();
-    } catch (error) {
-      if (error.status === 401) {
-        setErrors({ general: "Неверный email или пароль" });
-      } else {
-        setErrors({ general: "Что-то пошло не так, попробуйте позже" });
-      }
-      setStatus("idle");
+    } catch (err) {
+      setError(err.status === 401 ? "Неверный email или пароль" : "Что-то пошло не так, попробуйте позже");
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="login-modal-overlay" onClick={onClose}>
-      <div className="login-modal" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="login-modal__close" onClick={onClose} aria-label="Закрыть">
-          <X size={20} />
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Закрыть">
+          <X size={18} />
         </button>
 
-        <h2 className="login-modal__title">Вход</h2>
+        <div className="modal-logo">AI</div>
 
-        <form className="login-modal__form" onSubmit={handleSubmit}>
-          <div className="login-modal__field">
-            <label htmlFor="login-email">Email</label>
+        <div className="modal-badge">
+          <span className="modal-badge-dot" />
+          AI Deal
+        </div>
+
+        <h2 className="modal-title">Добро пожаловать</h2>
+        <p className="modal-sub">Войдите в свой аккаунт</p>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-field">
+            <label className="modal-label">Email</label>
             <input
-              id="login-email"
+              className="modal-inp"
               type="email"
-              value={form.email}
-              onChange={handleChange("email")}
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              required
             />
           </div>
 
-          <div className="login-modal__field">
-            <label htmlFor="login-password">Пароль</label>
-            <div className="login-modal__password-wrap">
+          <div className="modal-field">
+            <div className="modal-field-row">
+              <label className="modal-label">Пароль</label>
+              <button type="button" className="modal-forgot" onClick={handleForgot}>
+                Забыли пароль?
+              </button>
+            </div>
+            <div className="modal-pw-wrap">
               <input
-                id="login-password"
+                className="modal-inp"
                 type={showPassword ? "text" : "password"}
-                value={form.password}
-                onChange={handleChange("password")}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
+                required
               />
               <button
                 type="button"
-                className="login-modal__eye"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+                className="modal-pw-eye"
+                onClick={() => setShowPassword((p) => !p)}
+                aria-label="Показать пароль"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          {errors.general && (
-            <span className="login-modal__error login-modal__error--general">{errors.general}</span>
-          )}
+          {error && <p className="modal-error">{error}</p>}
 
-          <button type="submit" className="login-modal__submit-btn" disabled={status === "loading"}>
-            {status === "loading" ? "Вход..." : "Войти"}
+          <button type="submit" className="modal-btn-primary" disabled={loading}>
+            {loading ? "Входим..." : "Войти"}
           </button>
         </form>
 
-        <p className="login-modal__switch">
+        <div className="modal-divider">
+          <span>или</span>
+        </div>
+
+        <button type="button" className="modal-btn-tg" onClick={handleTelegramLogin}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="12" fill="#29B6F6" />
+            <path
+              d="M5.5 11.8l2.9 1.1 1.1 3.6c.1.2.3.3.5.2l1.6-1.3 3.1 2.3c.3.2.7.1.8-.3l2.5-9.5c.1-.4-.3-.7-.6-.6L5.2 11c-.4.1-.4.7.3.8z"
+              fill="white"
+            />
+          </svg>
+          Войти через Telegram
+        </button>
+
+        <p className="modal-footer">
           Нет аккаунта?{" "}
-          <button type="button" className="login-modal__switch-link" onClick={onSwitchToRegister}>
+          <button type="button" className="modal-link" onClick={onSwitchToRegister}>
             Зарегистрироваться
           </button>
         </p>
