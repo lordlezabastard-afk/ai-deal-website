@@ -172,7 +172,6 @@ function generateHandshake(count) {
   const positions = [];
   const rand = seededRandom(13);
 
-  // Центр — правая половина экрана
   const cx = 1.5;
   const cy = 0.0;
 
@@ -180,118 +179,83 @@ function generateHandshake(count) {
   const rightCount = Math.floor(count * 0.44);
   const gripCount = count - leftCount - rightCount;
 
-  // ── ЛЕВАЯ РУКА: идёт из нижнего-левого угла вверх-вправо ──
-  // Предплечье: от (-2.0, -1.2) до (-0.5, -0.15)
-  const lForearm = Math.floor(leftCount * 0.28);
-  for (let i = 0; i < lForearm; i++) {
-    const t = i / lForearm;
-    const x = cx + (-2.0 + t * 1.5) + (rand() - 0.5) * 0.12;
-    const y = cy + (-1.2 + t * 1.05) + (rand() - 0.5) * 0.08;
-    const z = (rand() - 0.5) * 0.15;
-    positions.push(new THREE.Vector3(x, y, z));
-  }
-
-  // Запястье и ладонь левой руки
-  const lPalm = Math.floor(leftCount * 0.32);
-  for (let i = 0; i < lPalm; i++) {
-    const t = i / lPalm;
-    const angle = rand() * Math.PI * 2;
-    const r = (0.13 + rand() * 0.09) * (1 - t * 0.3);
-    const x = cx + (-0.5 + t * 0.45) + Math.cos(angle) * r;
-    const y = cy + (-0.15 + t * 0.12) + Math.sin(angle) * r * 0.7;
-    positions.push(new THREE.Vector3(x, y, (rand() - 0.5) * 0.18));
-  }
-
-  // Пальцы левой руки — загнуты ВПРАВО (захватывают правую руку)
-  // Большой палец — вниз-вправо
-  const lThumbCount = Math.floor(leftCount * 0.08);
-  for (let i = 0; i < lThumbCount; i++) {
-    const t = i / lThumbCount;
-    positions.push(new THREE.Vector3(
-      cx + (-0.05 + t * 0.28) + (rand() - 0.5) * 0.03,
-      cy + (-0.08 - t * 0.22) + (rand() - 0.5) * 0.03,
-      (rand() - 0.5) * 0.08
-    ));
-  }
-
-  // 4 пальца — веером вправо-вверх
-  const lFingerData = [
-    { startY: 0.30, endX: 0.42, endY: 0.12 },
-    { startY: 0.15, endX: 0.48, endY: 0.05 },
-    { startY: 0.02, endX: 0.46, endY: -0.05 },
-    { startY: -0.12, endX: 0.38, endY: -0.14 },
-  ];
-  const lPerFinger = Math.floor((leftCount - lForearm - lPalm - lThumbCount) / 4);
-  lFingerData.forEach(({ startY, endX, endY }) => {
-    for (let i = 0; i < lPerFinger; i++) {
-      const t = i / lPerFinger;
+  // Вспомогательная функция — трубка вдоль отрезка с заданным радиусом
+  function tube(x0, y0, x1, y1, radius, n) {
+    for (let i = 0; i < n; i++) {
+      const t = i / n;
+      const bx = x0 + (x1 - x0) * t;
+      const by = y0 + (y1 - y0) * t;
+      // Перпендикуляр к направлению трубки
+      const dx = x1 - x0;
+      const dy = y1 - y0;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const nx = -dy / len;
+      const ny = dx / len;
+      const r = (rand() * 2 - 1) * radius;
+      const jitter = rand() * 0.04;
       positions.push(new THREE.Vector3(
-        cx + (-0.05 + t * endX) + (rand() - 0.5) * 0.025,
-        cy + (startY + t * (endY - startY)) + (rand() - 0.5) * 0.025,
-        (rand() - 0.5) * 0.08
+        cx + bx + nx * r + (rand() - 0.5) * jitter,
+        cy + by + ny * r + (rand() - 0.5) * jitter,
+        (rand() - 0.5) * radius * 1.2
       ));
     }
-  });
-
-  // ── ПРАВАЯ РУКА: идёт из верхнего-правого угла вниз-влево ──
-  // Предплечье: от (2.0, 1.2) до (0.5, 0.15)
-  const rForearm = Math.floor(rightCount * 0.28);
-  for (let i = 0; i < rForearm; i++) {
-    const t = i / rForearm;
-    const x = cx + (2.0 - t * 1.5) + (rand() - 0.5) * 0.12;
-    const y = cy + (1.2 - t * 1.05) + (rand() - 0.5) * 0.08;
-    positions.push(new THREE.Vector3(x, y, (rand() - 0.5) * 0.15));
   }
 
-  // Запястье и ладонь правой руки
-  const rPalm = Math.floor(rightCount * 0.32);
-  for (let i = 0; i < rPalm; i++) {
-    const t = i / rPalm;
-    const angle = rand() * Math.PI * 2;
-    const r = (0.13 + rand() * 0.09) * (1 - t * 0.3);
-    const x = cx + (0.5 - t * 0.45) + Math.cos(angle) * r;
-    const y = cy + (0.15 - t * 0.12) + Math.sin(angle) * r * 0.7;
-    positions.push(new THREE.Vector3(x, y, (rand() - 0.5) * 0.18));
+  // Вспомогательная функция — палец (тонкая трубка)
+  function finger(x0, y0, x1, y1, n) {
+    tube(x0, y0, x1, y1, 0.055, n);
   }
 
-  // Большой палец правой руки — вверх-влево
-  const rThumbCount = Math.floor(rightCount * 0.08);
-  for (let i = 0; i < rThumbCount; i++) {
-    const t = i / rThumbCount;
-    positions.push(new THREE.Vector3(
-      cx + (0.05 - t * 0.28) + (rand() - 0.5) * 0.03,
-      cy + (0.08 + t * 0.22) + (rand() - 0.5) * 0.03,
-      (rand() - 0.5) * 0.08
-    ));
-  }
+  // ── ЛЕВАЯ РУКА (снизу-слева → вверх-вправо) ──
 
-  // 4 пальца правой — веером влево-вниз (зеркально левой)
-  const rFingerData = [
-    { startY: -0.30, endX: -0.42, endY: -0.12 },
-    { startY: -0.15, endX: -0.48, endY: -0.05 },
-    { startY: -0.02, endX: -0.46, endY: 0.05 },
-    { startY: 0.12, endX: -0.38, endY: 0.14 },
-  ];
-  const rPerFinger = Math.floor((rightCount - rForearm - rPalm - rThumbCount) / 4);
-  rFingerData.forEach(({ startY, endX, endY }) => {
-    for (let i = 0; i < rPerFinger; i++) {
-      const t = i / rPerFinger;
-      positions.push(new THREE.Vector3(
-        cx + (0.05 + t * endX) + (rand() - 0.5) * 0.025,
-        cy + (startY + t * (endY - startY)) + (rand() - 0.5) * 0.025,
-        (rand() - 0.5) * 0.08
-      ));
-    }
-  });
+  // Предплечье — широкая трубка
+  tube(-2.0, -1.3, -0.55, -0.18, 0.14, Math.floor(leftCount * 0.30));
+
+  // Ладонь — шире предплечья
+  tube(-0.55, -0.18, -0.05, 0.05, 0.20, Math.floor(leftCount * 0.20));
+
+  // Большой палец — вниз-вправо от ладони
+  finger(-0.3, -0.22, 0.05, -0.48, Math.floor(leftCount * 0.08));
+
+  // 4 пальца веером вправо-вверх
+  finger(-0.05, 0.05, 0.38, 0.32, Math.floor(leftCount * 0.10));
+  finger(-0.05, 0.05, 0.44, 0.18, Math.floor(leftCount * 0.10));
+  finger(-0.05, 0.05, 0.43, 0.03, Math.floor(leftCount * 0.10));
+  finger(-0.05, 0.05, 0.36, -0.11, Math.floor(leftCount * 0.08));
+
+  // Добить остаток в ладонь
+  const lUsed = Math.floor(leftCount * (0.30 + 0.20 + 0.08 + 0.10 + 0.10 + 0.10 + 0.08));
+  tube(-0.4, -0.1, -0.1, 0.0, 0.17, leftCount - lUsed);
+
+  // ── ПРАВАЯ РУКА (сверху-справа → вниз-влево) — зеркально ──
+
+  // Предплечье
+  tube(2.0, 1.3, 0.55, 0.18, 0.14, Math.floor(rightCount * 0.30));
+
+  // Ладонь
+  tube(0.55, 0.18, 0.05, -0.05, 0.20, Math.floor(rightCount * 0.20));
+
+  // Большой палец — вверх-влево от ладони
+  finger(0.3, 0.22, -0.05, 0.48, Math.floor(rightCount * 0.08));
+
+  // 4 пальца веером влево-вниз
+  finger(0.05, -0.05, -0.38, -0.32, Math.floor(rightCount * 0.10));
+  finger(0.05, -0.05, -0.44, -0.18, Math.floor(rightCount * 0.10));
+  finger(0.05, -0.05, -0.43, -0.03, Math.floor(rightCount * 0.10));
+  finger(0.05, -0.05, -0.36, 0.11, Math.floor(rightCount * 0.08));
+
+  // Добить остаток
+  const rUsed = Math.floor(rightCount * (0.30 + 0.20 + 0.08 + 0.10 + 0.10 + 0.10 + 0.08));
+  tube(0.4, 0.1, 0.1, 0.0, 0.17, rightCount - rUsed);
 
   // ── ЗОНА СЦЕПЛЕНИЯ — плотное скопление в центре ──
   for (let i = 0; i < gripCount; i++) {
     const angle = rand() * Math.PI * 2;
-    const r = rand() * rand() * 0.28; // квадрат rand для плотного ядра
+    const r = rand() * rand() * 0.25;
     positions.push(new THREE.Vector3(
-      cx + Math.cos(angle) * r * 1.1 + (rand() - 0.5) * 0.04,
-      cy + Math.sin(angle) * r * 0.8 + (rand() - 0.5) * 0.04,
-      (rand() - 0.5) * 0.14
+      cx + Math.cos(angle) * r * 1.0,
+      cy + Math.sin(angle) * r * 0.7,
+      (rand() - 0.5) * 0.15
     ));
   }
 
@@ -573,7 +537,7 @@ function ParticleMorphSystem({ activeSection, count }) {
           vertexColors
           transparent
           opacity={0.9}
-          size={0.13}
+          size={0.07}
           sizeAttenuation
           map={fgSpriteTexture}
           alphaTest={0.4}
