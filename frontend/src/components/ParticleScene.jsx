@@ -172,72 +172,91 @@ function generateHandshake(count) {
   const positions = [];
   const rand = seededRandom(13);
   const cx = 1.5;
-  const cy = 0.1;
+  const cy = 0.0;
 
-  function arc(ex, ey, rx, ry, fromAngle, toAngle, thickness, n) {
+  // Заполнить трапецию (цоколь)
+  function fillTrap(x0, y0, x1, y1, w0, w1, n) {
     for (let i = 0; i < n; i++) {
-      const a = fromAngle + (i / n) * (toAngle - fromAngle);
-      const r = 1 + (rand() - 0.5) * thickness;
+      const t = rand();
+      const w = w0 + (w1 - w0) * t;
+      const y = y0 + (y1 - y0) * t;
+      const x = (rand() - 0.5) * w;
       positions.push(new THREE.Vector3(
-        cx + ex + Math.cos(a) * rx * r + (rand() - 0.5) * 0.015,
-        cy + ey + Math.sin(a) * ry * r + (rand() - 0.5) * 0.015,
-        (rand() - 0.5) * 0.08
+        cx + x + (rand() - 0.5) * 0.02,
+        cy + y + (rand() - 0.5) * 0.02,
+        (rand() - 0.5) * 0.15
       ));
     }
   }
 
-  function seg(x0, y0, x1, y1, thickness, n) {
-    const dx = x1 - x0, dy = y1 - y0;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const px = -dy / len, py = dx / len;
-    for (let i = 0; i < n; i++) {
-      const t = i / n;
-      const r = (rand() * 2 - 1) * thickness;
-      positions.push(new THREE.Vector3(
-        cx + x0 + dx * t + px * r + (rand() - 0.5) * 0.015,
-        cy + y0 + dy * t + py * r + (rand() - 0.5) * 0.015,
-        (rand() - 0.5) * 0.08
-      ));
+  // Заполнить произвольную форму через rejection sampling
+  // Форма груши A60: верхняя часть — круг r=1.0 со смещением вверх,
+  // нижняя — сужается по квадратичной кривой
+  function fillBulbBody(n) {
+    let placed = 0;
+    let attempts = 0;
+    while (placed < n && attempts < n * 20) {
+      attempts++;
+      const x = (rand() - 0.5) * 2.2;
+      const y = rand() * 2.8 - 1.1; // от -1.1 до +1.7
+
+      // Верхняя часть — большой круг (центр смещён вверх)
+      const bulbCY = 0.55;
+      const bulbR = 1.05;
+      const inBulb = x * x + (y - bulbCY) * (y - bulbCY) < bulbR * bulbR;
+
+      // Нижняя переходная часть — квадратично сужается
+      const transition = y < bulbCY - 0.3;
+      const narrowR = transition
+        ? bulbR * Math.max(0, (y + 1.1) / (bulbCY - 0.3 + 1.1)) * 0.85
+        : bulbR;
+      const inNarrow = transition
+        ? x * x + (y - bulbCY) * (y - bulbCY) < narrowR * narrowR
+        : false;
+
+      if (inBulb || inNarrow) {
+        positions.push(new THREE.Vector3(
+          cx + x * 0.95 + (rand() - 0.5) * 0.03,
+          cy + y + (rand() - 0.5) * 0.03,
+          (rand() - 0.5) * 0.30
+        ));
+        placed++;
+      }
     }
   }
 
   const N = count;
 
-  // ── КУПОЛ — плотный контур окружности ──
-  arc(0, 0.2, 0.90, 0.90, Math.PI, Math.PI * 2, 0.04, Math.floor(N * 0.22));
-  arc(0, 0.2, 0.90, 0.65, 0, Math.PI, 0.04, Math.floor(N * 0.14));
+  // ── ТЕЛО ЛАМПОЧКИ (груша) — 82% частиц ──
+  fillBulbBody(Math.floor(N * 0.82));
+
+  // ── ЦОКОЛЬ — три горизонтальных слоя ──
+  // Верхняя часть цоколя (широкая)
+  fillTrap(0, -1.05, 0, -1.22, 0.58, 0.52, Math.floor(N * 0.05));
+  // Средняя
+  fillTrap(0, -1.22, 0, -1.38, 0.52, 0.46, Math.floor(N * 0.04));
+  // Нижняя (узкая)
+  fillTrap(0, -1.38, 0, -1.52, 0.46, 0.38, Math.floor(N * 0.03));
 
   // ── НИТЬ НАКАЛИВАНИЯ — W внутри купола ──
-  seg(-0.22, 0.22, -0.08, 0.62, 0.022, Math.floor(N * 0.05));
-  seg(-0.08, 0.62, 0.00, 0.35, 0.022, Math.floor(N * 0.04));
-  seg(0.00, 0.35, 0.08, 0.62, 0.022, Math.floor(N * 0.04));
-  seg(0.08, 0.62, 0.22, 0.22, 0.022, Math.floor(N * 0.05));
-  // Две вертикальные ножки нити
-  seg(-0.22, 0.22, -0.22, -0.10, 0.018, Math.floor(N * 0.03));
-  seg(0.22, 0.22, 0.22, -0.10, 0.018, Math.floor(N * 0.03));
+  // (тонкие линии из частиц, более яркие)
+  function filament(x0, y0, x1, y1, n) {
+    for (let i = 0; i < n; i++) {
+      const t = i / n;
+      positions.push(new THREE.Vector3(
+        cx + x0 + (x1 - x0) * t + (rand() - 0.5) * 0.025,
+        cy + y0 + (y1 - y0) * t + (rand() - 0.5) * 0.025,
+        (rand() - 0.5) * 0.05
+      ));
+    }
+  }
 
-  // ── ЮБКА — сужение от купола к цоколю ──
-  seg(-0.90, -0.25, -0.32, -0.48, 0.03, Math.floor(N * 0.05));
-  seg(0.90, -0.25, 0.32, -0.48, 0.03, Math.floor(N * 0.05));
-
-  // ── ЦОКОЛЬ — три чёткие горизонтальные полосы ──
-  seg(-0.32, -0.48, 0.32, -0.48, 0.025, Math.floor(N * 0.05));
-  seg(-0.29, -0.64, 0.29, -0.64, 0.025, Math.floor(N * 0.05));
-  seg(-0.26, -0.80, 0.26, -0.80, 0.025, Math.floor(N * 0.04));
-  // Боковые стенки цоколя
-  seg(-0.32, -0.48, -0.26, -0.80, 0.020, Math.floor(N * 0.03));
-  seg(0.32, -0.48, 0.26, -0.80, 0.020, Math.floor(N * 0.03));
-
-  // ── ЛУЧИ — 6 коротких лучей от купола ──
-  [30, 90, 150, 210, 270, 330].forEach((deg) => {
-    const a = (deg * Math.PI) / 180;
-    const r1 = 0.95, r2 = 1.30;
-    seg(
-      Math.cos(a) * r1, 0.2 + Math.sin(a) * r1 * 0.85,
-      Math.cos(a) * r2, 0.2 + Math.sin(a) * r2 * 0.85,
-      0.018, Math.floor(N * 0.008)
-    );
-  });
+  filament(-0.28, 0.30, -0.10, 0.72, Math.floor(N * 0.018));
+  filament(-0.10, 0.72, 0.00, 0.44, Math.floor(N * 0.015));
+  filament(0.00, 0.44, 0.10, 0.72, Math.floor(N * 0.015));
+  filament(0.10, 0.72, 0.28, 0.30, Math.floor(N * 0.018));
+  filament(-0.28, 0.30, -0.28, 0.05, Math.floor(N * 0.008));
+  filament(0.28, 0.30, 0.28, 0.05, Math.floor(N * 0.008));
 
   while (positions.length < count) {
     positions.push(
